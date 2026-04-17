@@ -12,6 +12,8 @@ import Stats from './pages/Stats'
 import Services from './pages/Services'
 import Testimonials from './pages/Testimonials'
 import Contact from './pages/Contact'
+import ParallaxDemo from './pages/ParallaxDemo'
+import StackingLayout from './components/StackingLayout'
 
 const App = () => {
   return (
@@ -22,23 +24,28 @@ const App = () => {
           path="/"
           element={
             <>
-              <Home />
-              <About />
-              <Digital />
-              <Gallery />
-              <Anime />
-              <BrandCollaborations />
-              <Stats />
-              <Services />
-              <Testimonials />
-              <Contact />
-              <Footer />
+              <StackingLayout>
+                <Home />
+                <About />
+                <Digital />
+              </StackingLayout>
+              <div className="relative z-10">
+                <Gallery />
+                <Anime />
+                <BrandCollaborations />
+                <Stats />
+                <Services />
+                <Testimonials />
+                <Contact />
+                <Footer />
+              </div>
             </>
           }
         />
         <Route path="/about" element={<About />} />
         <Route path="/gallery" element={<Gallery />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/parallax-demo" element={<ParallaxDemo />} />
       </Routes>
     </>
   )
