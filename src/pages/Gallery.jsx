@@ -111,7 +111,7 @@ function DragRow({ photos, direction, rowHeight }) {
 
 export default function Gallery() {
   return (
-    <div style={{ background: '#0a0a0a', minHeight: '100vh', overflow: 'hidden' }}>
+    <div id="gallery" style={{ background: '#0a0a0a', minHeight: '100vh', overflow: 'hidden' }}>
 
       <div style={{ position: 'fixed', left: 0, top: 0, width: '5px', height: '100%', background: '#0a0a0a', zIndex: 20 }} />
 

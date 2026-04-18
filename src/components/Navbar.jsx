@@ -4,11 +4,38 @@ import { useState } from "react";
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const links = [
-    { label: "Portfolio", href: "#home" },
-    { label: "Reels", href: "#reels" },
+    { label: "Home", href: "#home" },
     { label: "About", href: "#about" },
-    { label: "Collabs", href: "#collabs" },
+    { label: "Gallery", href: "#gallery" },
+    { label: "Services", href: "#services" },
   ];
+
+  const handleClick = (e, href) => {
+    e.preventDefault();
+    const targetId = href.replace('#', '');
+    
+    // Define the order of sections
+    const sectionOrder = ['home', 'about', 'digital', 'gallery', 'anime', 'brand-collaborations', 'stats', 'services', 'testimonials', 'contact'];
+    const targetIndex = sectionOrder.indexOf(targetId);
+    
+    if (targetIndex !== -1) {
+      // Each section is 100vh, so scroll to index * viewport height
+      const scrollPosition = targetIndex * window.innerHeight;
+      
+      window.scrollTo({
+        top: scrollPosition,
+        behavior: 'smooth'
+      });
+    } else {
+      // Fallback for sections not in the list
+      const element = document.getElementById(targetId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+    
+    setMobileOpen(false);
+  };
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50 flex flex-col items-center">
@@ -27,14 +54,16 @@ export default function Navbar() {
       >
         <div className="w-full px-4 sm:px-6 md:px-12 py-4 md:py-5 flex items-center justify-between">
           {/* Logo */}
-          <motion.span
+          <motion.a
+            href="#home"
+            onClick={(e) => handleClick(e, '#home')}
             initial={{ opacity: 0, x: -16 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 1.0, ease: [0.22, 1, 0.36, 1] }}
-            className="text-white text-[20px] sm:text-[23px] font-semibold tracking-[-0.025em] leading-none"
+            className="text-white text-[20px] sm:text-[23px] font-semibold tracking-[-0.025em] leading-none cursor-pointer"
           >
             sameer.
-          </motion.span>
+          </motion.a>
 
           {/* Desktop links */}
           <div className="hidden md:flex items-center gap-8">
@@ -42,6 +71,7 @@ export default function Navbar() {
               <motion.a
                 key={link.label}
                 href={link.href}
+                onClick={(e) => handleClick(e, link.href)}
                 initial={{ opacity: 0, y: -8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{
@@ -55,17 +85,7 @@ export default function Navbar() {
               </motion.a>
             ))}
 
-            <motion.a
-              href="#contact"
-              initial={{ opacity: 0, scale: 0.85 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4, delay: 1.38, ease: [0.22, 1, 0.36, 1] }}
-              className="border border-white/20 bg-white/5 hover:bg-white/12 transition-colors duration-200 text-white text-[10px] uppercase tracking-[0.18em] px-4 py-2 rounded-full"
-            >
-              Book Shoot
-            </motion.a>
-
-            <motion.button
+             <motion.button
               initial={{ opacity: 0, scale: 0.85 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.4, delay: 1.46, ease: [0.22, 1, 0.36, 1] }}
@@ -73,6 +93,19 @@ export default function Navbar() {
             >
               Instagram
             </motion.button>
+
+            <motion.a
+              href="#contact"
+              onClick={(e) => handleClick(e, '#contact')}
+              initial={{ opacity: 0, scale: 0.85 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4, delay: 1.38, ease: [0.22, 1, 0.36, 1] }}
+              className="border border-white/20 bg-white/5 hover:bg-white/12 transition-colors duration-200 text-white text-[10px] uppercase tracking-[0.18em] px-4 py-2 rounded-full"
+            >
+              Contact
+            </motion.a>
+
+           
           </div>
 
           {/* Mobile menu toggle */}
@@ -105,7 +138,7 @@ export default function Navbar() {
             <a
               key={link.label}
               href={link.href}
-              onClick={() => setMobileOpen(false)}
+              onClick={(e) => handleClick(e, link.href)}
               className="text-white/80 hover:text-white transition-colors duration-200 text-[10px] uppercase tracking-[0.22em] font-medium py-1"
             >
               {link.label}
@@ -113,10 +146,10 @@ export default function Navbar() {
           ))}
           <a
             href="#contact"
-            onClick={() => setMobileOpen(false)}
+            onClick={(e) => handleClick(e, '#contact')}
             className="mt-1 inline-flex w-fit border border-white/20 bg-white/5 hover:bg-white/12 transition-colors duration-200 text-white text-[10px] uppercase tracking-[0.18em] px-4 py-2 rounded-full"
           >
-            Book Shoot
+            Contact
           </a>
         </div>
       </motion.div>

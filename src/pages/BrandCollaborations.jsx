@@ -18,7 +18,7 @@ const brands = [
 
 export default function BrandCollaborations() {
   return (
-    <section id="brands" className="min-h-screen bg-[#efefef] overflow-hidden">
+    <section id="brand-collaborations" className="min-h-screen bg-[#efefef] overflow-hidden">
       <div className="mx-auto w-full max-w-[1320px] px-4 sm:px-6 lg:px-10 py-16 sm:py-20 lg:py-24">
         <motion.p
           {...fadeUp(0.1)}

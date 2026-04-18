@@ -128,7 +128,7 @@ function ContactForm() {
 
 export default function Contact() {
   return (
-    <div style={{ background: '#efefef', color: '#000', minHeight: '100vh', overflowX: 'hidden' }}>
+    <div id="contact" style={{ background: '#efefef', color: '#000', minHeight: '100vh', overflowX: 'hidden' }}>
       {/* Structural Accent */}
       <div style={{ position: 'fixed', left: 0, top: 0, width: '4px', height: '100%', background: '#000', zIndex: 100 }} />
 

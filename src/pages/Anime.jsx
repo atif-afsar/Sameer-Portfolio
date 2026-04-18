@@ -110,6 +110,7 @@ export default function WaterFillHero() {
 
   return (
     <section
+      id="anime"
       ref={sectionRef}
       className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden"
       style={{ background: "#000000" }}
