@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import Loader from './components/Loader'
+import ScrollText from './components/ScrollText'
 import Home from './pages/Home'
 import About from './pages/About'
 import Digital from './pages/Digital'
@@ -43,6 +44,7 @@ const App = () => {
                     <BrandCollaborations />
                     <Stats />
                     <Services />
+                    <ScrollText />
                     <Testimonials />
                     <Contact />
                     <Footer />
