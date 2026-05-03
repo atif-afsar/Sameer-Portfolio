@@ -1,11 +1,28 @@
 import { motion } from "framer-motion";
 
-const fadeUp = (delay = 0) => ({
-  initial: { opacity: 0, y: 24 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, amount: 0.25 },
-  transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1], delay },
-});
+// Award-winning sites use custom bezier curves for "snappy yet fluid" motion
+const transition = { duration: 1, ease: [0.16, 1, 0.3, 1] };
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.3,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 40, skewY: 2 },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    skewY: 0, 
+    transition 
+  },
+};
 
 const brands = [
   { name: "Nike", category: "Sportswear" },
@@ -19,57 +36,81 @@ const brands = [
 export default function BrandCollaborations() {
   return (
     <section id="brand-collaborations" className="min-h-screen bg-[#efefef] overflow-hidden">
-      <div className="mx-auto w-full max-w-[1320px] px-4 sm:px-6 lg:px-10 py-16 sm:py-20 lg:py-24">
-        <motion.p
-          {...fadeUp(0.1)}
-          className="text-black/55 text-[10px] sm:text-[11px] uppercase tracking-[0.2em] sm:tracking-[0.24em] font-medium"
-        >
-          Trusted Partners
-        </motion.p>
-        <motion.h2
-          {...fadeUp(0.2)}
-          className="mt-4 sm:mt-6 text-black leading-[0.95] sm:leading-[0.98] tracking-[-0.03em] font-medium"
-          style={{
-            fontFamily: "'Syne', sans-serif",
-            fontSize: "clamp(42px, 10vw, 92px)",
-          }}
-        >
-          Brand
-          <br />
-          Collaborations
-        </motion.h2>
-        <motion.p
-          {...fadeUp(0.3)}
-          className="mt-5 sm:mt-7 text-black/60 text-[15px] sm:text-[17px] lg:text-[19px] leading-[1.55] max-w-[560px]"
-          style={{ fontFamily: "'Syne', sans-serif" }}
-        >
-          Working with leading brands to create authentic content
-          <span className="hidden sm:inline">
-            <br />
-          </span>
-          that resonates with audiences and drives engagement.
-        </motion.p>
+      <motion.div 
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.2 }}
+        className="mx-auto w-full max-w-[1320px] px-4 sm:px-6 lg:px-10 py-16 sm:py-20 lg:py-24"
+      >
+        {/* Header Section */}
+        <header className="max-w-[800px]">
+          <motion.p
+            variants={itemVariants}
+            className="text-black/55 text-[10px] sm:text-[11px] uppercase tracking-[0.3em] font-bold"
+          >
+            Trusted Partners
+          </motion.p>
+          
+          <motion.h2
+            variants={itemVariants}
+            className="mt-4 sm:mt-6 text-black leading-[0.9] tracking-[-0.04em] font-bold"
+            style={{
+              fontFamily: "'Syne', sans-serif",
+              fontSize: "clamp(48px, 12vw, 110px)",
+            }}
+          >
+            Brand <br /> Collaborations
+          </motion.h2>
 
-        <div className="mt-12 sm:mt-16 lg:mt-20 grid grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 lg:gap-10">
-          {brands.map((brand, index) => (
+          <motion.div variants={itemVariants} className="h-[1px] w-24 bg-black/20 my-8" />
+
+          <motion.p
+            variants={itemVariants}
+            className="text-black/60 text-[16px] sm:text-[18px] lg:text-[22px] leading-[1.4] max-w-[560px]"
+            style={{ fontFamily: "'Syne', sans-serif" }}
+          >
+            Working with leading brands to create authentic content
+            that resonates with audiences and drives engagement.
+          </motion.p>
+        </header>
+
+        {/* Grid Section */}
+        <motion.div 
+          variants={containerVariants}
+          className="mt-16 sm:mt-24 lg:mt-32 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+        >
+          {brands.map((brand) => (
             <motion.div
               key={brand.name}
-              {...fadeUp(0.1 * index)}
-              className="group relative aspect-[4/3] bg-black/5 hover:bg-black/10 transition-colors duration-500 flex flex-col items-center justify-center p-6 sm:p-8"
+              variants={itemVariants}
+              whileHover={{ scale: 0.98 }} // Subtle "press" effect on hover
+              className="group relative aspect-[16/10] bg-white border border-black/5 flex flex-col items-center justify-center overflow-hidden cursor-pointer"
             >
-              <p
-                className="text-black text-[28px] sm:text-[36px] lg:text-[44px] font-medium tracking-[-0.02em]"
-                style={{ fontFamily: "'Syne', sans-serif" }}
-              >
-                {brand.name}
-              </p>
-              <p className="mt-2 text-black/40 text-[9px] sm:text-[10px] uppercase tracking-[0.22em]">
-                {brand.category}
-              </p>
+              {/* Animated Background Reveal */}
+              <motion.div 
+                className="absolute inset-0 bg-black translate-y-[100%] transition-transform duration-700 ease-[0.16, 1, 0.3, 1] group-hover:translate-y-0" 
+              />
+
+              <div className="relative z-10 text-center">
+                <motion.p
+                  className="text-black group-hover:text-white text-[32px] sm:text-[40px] font-bold tracking-[-0.03em] transition-colors duration-500"
+                  style={{ fontFamily: "'Syne', sans-serif" }}
+                >
+                  {brand.name}
+                </motion.p>
+                <p className="mt-1 text-black/40 group-hover:text-white/50 text-[10px] uppercase tracking-[0.2em] transition-colors duration-500">
+                  {brand.category}
+                </p>
+              </div>
+
+              {/* Decorative Corner (Awwwards Style) */}
+              <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                <div className="w-2 h-2 rounded-full bg-white" />
+              </div>
             </motion.div>
           ))}
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </section>
   );
 }

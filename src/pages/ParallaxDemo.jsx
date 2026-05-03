@@ -165,7 +165,7 @@ const ParallaxDemo = () => {
   // Normal scrolling sections (after the first 3)
   const normalSections = [
     // Section 4 - Normal scroll
-    <section className="min-h-screen bg-white flex items-center justify-center px-6">
+    <section key="section4" className="min-h-screen bg-white flex items-center justify-center px-6">
       <div className="max-w-4xl text-center">
         <h2 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
           Normal Scroll Section
@@ -185,7 +185,7 @@ const ParallaxDemo = () => {
     </section>,
 
     // Section 5 - Normal scroll
-    <section className="min-h-screen bg-gray-50 flex items-center justify-center px-6">
+    <section key="section5" className="min-h-screen bg-gray-50 flex items-center justify-center px-6">
       <div className="max-w-4xl text-center">
         <h2 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
           Another Section
@@ -204,7 +204,7 @@ const ParallaxDemo = () => {
     </section>,
 
     // Section 6 - Normal scroll
-    <section className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center justify-center px-6">
+    <section key="section6" className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center justify-center px-6">
       <div className="max-w-4xl text-center">
         <h2 className="text-5xl md:text-6xl font-bold text-white mb-6">
           Final Section

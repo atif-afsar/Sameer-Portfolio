@@ -1,195 +1,104 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
+import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 
 const ITEMS = [
-  { label: "CONTENT CREATION",      img: "https://i.pinimg.com/736x/ab/42/d1/ab42d1e4b550ce598d6fe8e3d25bfbb0.jpg",      cap: "Visual language"    },
-  { label: "BRAND storytelling",    img: "/images/story.PNG",        cap: "Identity systems"   },
-  { label: "SOCIAL influence",      img: "/images/branding.HEIC",    cap: "No-code builds"     },
-  { label: "PERFORMANCE marketing", img: "/images/performance.jpeg", cap: "Product interfaces" },
-  { label: "SALES conversion",      img: "/images/sales.jpeg",       cap: "Motion engineering" },
-  { label: "AUDIENCE growth",       img: "/images/growth.HEIC",      cap: "Depth & dimension"  },
+  { label: "CONTENT CREATION", img: "https://i.pinimg.com/736x/ab/42/d1/ab42d1e4b550ce598d6fe8e3d25bfbb0.jpg", cap: "Visual language" },
+  { label: "BRAND storytelling", img: "https://images.unsplash.com/photo-1557683316-973673baf926", cap: "Identity systems" },
+  { label: "SOCIAL influence", img: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853", cap: "No-code builds" },
+  { label: "PERFORMANCE marketing", img: "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d", cap: "Product interfaces" },
+  { label: "SALES conversion", img: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe", cap: "Motion engineering" },
+  { label: "AUDIENCE growth", img: "https://images.unsplash.com/photo-1633167606207-d840b5070fc2", cap: "Depth & dimension" },
 ];
 
 export default function ScrollPortfolio() {
-  const appRef   = useRef(null);
-  const fillsRef = useRef([]);
-  const imgsRef  = useRef([]);
-  const lastIdx  = useRef(0);
+  const containerRef = useRef(null);
+  
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end end"]
+  });
 
-  useEffect(() => {
-    ITEMS.forEach((item) => { const i = new Image(); i.src = item.img; });
-
-    function scrub() {
-      const app = appRef.current;
-      if (!app) return;
-
-      const appTop      = app.getBoundingClientRect().top + window.scrollY;
-      const scrollStart = appTop + window.innerHeight;
-      const scrollEnd   = appTop + app.offsetHeight - window.innerHeight;
-      const raw = Math.max(0, Math.min(1,
-        (window.scrollY - scrollStart) / (scrollEnd - scrollStart)
-      ));
-
-      const n = ITEMS.length;
-
-      fillsRef.current.forEach((fill, i) => {
-        if (!fill) return;
-        const t0    = i / n;
-        const t1    = (i + 1) / n;
-        const local = Math.max(0, Math.min(1, (raw - t0) / (t1 - t0)));
-        fill.style.clipPath = `inset(0 ${(100 - local * 100).toFixed(2)}% 0 0)`;
-      });
-
-      const active = Math.min(n - 1, Math.floor(raw * n + 0.1));
-      if (active !== lastIdx.current) {
-        imgsRef.current[lastIdx.current]?.classList.remove("active");
-        imgsRef.current[active]?.classList.add("active");
-        lastIdx.current = active;
-      }
-    }
-
-    window.addEventListener("scroll", scrub, { passive: true });
-    scrub();
-    return () => window.removeEventListener("scroll", scrub);
-  }, []);
+  const smoothProgress = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001
+  });
 
   return (
-    <>
-      <style>{`
-        .sp-base {
-          font-family: 'Syne', sans-serif;
-          font-size: clamp(28px, 5vw, 72px);
-          font-weight: 700;
-          letter-spacing: -0.02em;
-          line-height: 1.1;
-          text-transform: uppercase;
-          color: #7a7874;
-          display: block;
-          white-space: nowrap;
-          padding: 2px 0;
-        }
-        .sp-fill {
-          font-family: 'Syne', sans-serif;
-          font-size: clamp(28px, 5vw, 72px);
-          font-weight: 700;
-          letter-spacing: -0.02em;
-          line-height: 1.1;
-          text-transform: uppercase;
-          color: #1a1a1a;
-          display: block;
-          white-space: nowrap;
-          padding: 2px 0;
-          position: absolute;
-          top: 0; left: 0;
-          clip-path: inset(0 100% 0 0);
-          will-change: clip-path;
-          pointer-events: none;
-        }
-        .sp-img {
-          position: absolute; inset: 0;
-          width: 100%; height: 100%;
-          object-fit: cover;
-          opacity: 0;
-          transform: scale(1.06);
-          transition:
-            opacity 0.65s cubic-bezier(0.22,1,0.36,1),
-            transform 0.85s cubic-bezier(0.22,1,0.36,1);
-          will-change: opacity, transform;
-        }
-        .sp-img.active { opacity: 1; transform: scale(1); }
-      `}</style>
-
-      <div
-        ref={appRef}
-        style={{ position: "relative", background: "#e8e6e1" }}
-      >
-        {/* Sticky scene */}
-        <div
-          style={{
-            position: "sticky",
-            top: 0,
-            height: "100vh",
-            width: "100%",
-            overflow: "hidden",
-            display: "flex",
-            alignItems: "stretch",
-            background: "#e8e6e1",
-          }}
-        >
-          {/* LEFT — text column */}
-          <div style={{
-            flex: 1,
-            display: "flex",
-            alignItems: "center",
-            padding: "0 12px 0 48px",
-            overflow: "hidden",
-            position: "relative",
-          }}>
-            <span style={{
-              position: "absolute", left: 20, top: "50%",
-              transform: "translateY(-50%)",
-              writingMode: "vertical-rl", textOrientation: "mixed",
-              fontFamily: "'Syne',sans-serif", fontSize: 10,
-              letterSpacing: "0.22em", textTransform: "uppercase", color: "#9a9690",
-            }}>
-              Storytelling
+    <section ref={containerRef} className="relative bg-[#e8e6e1] py-10 sm:py-16">
+      {/* 
+         FIX: Changed height to 100dvh (dynamic viewport height) 
+         Added py-10 to ensure section has top and bottom breathing room 
+      */}
+      <div className="sticky top-0 h-[100dvh] w-full flex items-center overflow-hidden py-6 sm:py-10">
+        <div className="container mx-auto px-6 sm:px-12 lg:px-24 grid grid-cols-12 items-center gap-6 lg:gap-10">
+          
+          {/* TEXT COLUMN */}
+          <div className="col-span-12 lg:col-span-7 flex flex-col justify-center select-none z-20">
+            <span className="mb-6 text-[9px] sm:text-[10px] tracking-[0.3em] uppercase text-black/40 font-semibold">
+              Featured Projects
             </span>
+            {ITEMS.map((item, i) => {
+              const start = i / ITEMS.length;
+              const end = (i + 1) / ITEMS.length;
+              
+              // Tightened the opacity range so items fade out faster before hitting the top/bottom
+              const opacity = useTransform(smoothProgress, [start, start + 0.08, end - 0.08, end], [0.05, 1, 1, 0.05]);
+              const yTranslate = useTransform(smoothProgress, [start, end], [8, -8]);
 
-            <div style={{ width: "100%", paddingLeft: "40px" }}>
-              {ITEMS.map((item, i) => (
-                <div key={item.label} style={{ position: "relative", overflow: "hidden" }}>
-                  <span className="sp-base">{item.label}</span>
-                  <span
-                    className="sp-fill"
-                    ref={(el) => (fillsRef.current[i] = el)}
-                  >
+              return (
+                <motion.div 
+                  key={i} 
+                  style={{ opacity, y: yTranslate }}
+                  className="relative py-3 sm:py-4"
+                >
+                  <h2 className="text-[clamp(24px,5vw,64px)] font-bold leading-[1.1] tracking-tighter uppercase font-syne text-black">
                     {item.label}
-                  </span>
-                </div>
-              ))}
-            </div>
+                  </h2>
+                  <motion.span 
+                    className="absolute -bottom-1 left-0 text-[8px] sm:text-[9px] tracking-[0.35em] font-bold text-black/40 uppercase"
+                    style={{ opacity }}
+                  >
+                    {item.cap}
+                  </motion.span>
+                </motion.div>
+              );
+            })}
           </div>
 
-          {/* RIGHT — image panel */}
-          <div
-            style={{
-              position: "relative",
-              width: "clamp(280px, 32vw, 420px)",
-              flexShrink: 0,
-              padding: "28px 24px",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-           
+          {/* IMAGE COLUMN */}
+          <div className="hidden lg:col-span-5 lg:flex justify-center items-center z-10">
+            <div className="relative w-full aspect-[4/5] max-h-[70vh] overflow-hidden rounded-sm bg-black/5 shadow-2xl">
+              {ITEMS.map((item, i) => {
+                const start = i / ITEMS.length;
+                const end = (i + 1) / ITEMS.length;
+                
+                const opacity = useTransform(smoothProgress, [start - 0.1, start, end, end + 0.1], [0, 1, 1, 0]);
+                const scale = useTransform(smoothProgress, [start, end], [1.15, 1]);
 
-            <div style={{
-              width: "100%", 
-              maxWidth: "340px",
-              aspectRatio: "1/1",
-              position: "relative", 
-              overflow: "hidden",
-              borderRadius: 4, 
-              background: "#bbb",
-            }}>
-              {ITEMS.map((item, i) => (
-                <img
-                  key={item.label}
-                  ref={(el) => (imgsRef.current[i] = el)}
-                  src={item.img}
-                  alt={item.label}
-                  className={`sp-img${i === 0 ? " active" : ""}`}
-                />
-              ))}
+                return (
+                  <motion.div
+                    key={i}
+                    style={{ opacity }}
+                    className="absolute inset-0 z-10"
+                  >
+                    <motion.img
+                      src={item.img}
+                      alt={item.label}
+                      style={{ scale }}
+                      className="w-full h-full object-cover"
+                    />
+                  </motion.div>
+                );
+              })}
             </div>
           </div>
         </div>
-
-        {/* Bottom spacer — controls scroll speed per item */}
-        <div style={{ height: "300vh" }} />
       </div>
-    </>
+
+      {/* Spacer determines scroll duration */}
+      <div className="h-[300vh]" />
+    </section>
   );
 }
