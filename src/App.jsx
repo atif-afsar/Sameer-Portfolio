@@ -35,11 +35,11 @@ const App = () => {
                 <>
                   <StackingLayout>
                     <Home />
-                    <About />
-                    <Digital />
+                    {/* <About /> */}
+                    {/* <Digital /> */}
                   </StackingLayout>
                   <div className="relative z-10">
-                    <Gallery />
+                    {/* <Gallery /> */}
                     <Anime />
                     <BrandCollaborations />
                     <Stats />

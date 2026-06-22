@@ -2,27 +2,35 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 
 const imageSources = [
-  "/images/image.png",
-  "/images/image0.png",
-  "/images/image1.png",
-  "/images/image2.png",
-  "/images/image3.png",
-  "/images/image4.png",
-  "/images/imagea.png",
-  "/images/sameer1.png",
-  "/images/SAMEER SHAMEEM.png",
-  "/images/story.PNG",
+  "/images/premier.png",
   "/images/content.png",
-  "/images/sales.jpeg",
-  "/images/performance.jpeg",
-  "/images/image.png",
+  "/images/facebook.png",
   "/images/image1.png",
+  "/images/gmail.png",
+  "/images/image2.png",
+  "/images/googleAds.png",
   "/images/image3.png",
+  "/images/insta.png",
+  "/images/image4.png",
+  "/images/meta.png",
+  "/images/performance.jpeg",
+  "/images/sameer1.png",
+  "/images/sales.jpeg",
+  "/images/x.png",
+  "/images/youtube.png",
 ];
 
 const totalImages = imageSources.length;
 const maxScroll = 2600;
 const lerp = (start, end, amount) => start * (1 - amount) + end * amount;
+
+const roles = [
+  "Digital Marketer",
+  "Content Creator",
+  "Performance Marketer",
+  "Growth Strategist",
+  "Copy Writer",
+];
 
 function FlipCard({ src, index, target }) {
   return (
@@ -55,10 +63,9 @@ function FlipCard({ src, index, target }) {
           <img
             src={src}
             alt={`Portfolio visual ${index + 1}`}
-            className="h-full w-full object-cover grayscale transition duration-500 hover:grayscale-0"
+            className="h-full w-full object-cover transition duration-500"
             draggable="false"
           />
-          <div className="absolute inset-0 bg-black/10 transition-colors group-hover:bg-transparent" />
         </div>
 
         <div
@@ -83,10 +90,24 @@ export default function Home() {
   const [morphValue, setMorphValue] = useState(0);
   const [rotateValue, setRotateValue] = useState(0);
   const [parallaxValue, setParallaxValue] = useState(0);
+  const [displayText, setDisplayText] = useState("");
+  const [roleIndex, setRoleIndex] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
   const containerRef = useRef(null);
   const scrollRef = useRef(0);
+  const lastPageScrollRef = useRef(0);
   const virtualScroll = useMotionValue(0);
   const mouseX = useMotionValue(0);
+  const activeRole = roles[roleIndex % roles.length];
+  const isMobileViewport = containerSize.width < 768;
+  const safeTextWidth = Math.min(
+    isMobileViewport ? 210 : 430,
+    Math.max(160, (containerSize.width || 360) * (isMobileViewport ? 0.5 : 0.33))
+  );
+  const roleFontSize =
+    activeRole.length > 18
+      ? "clamp(22px, 5.2vw, 44px)"
+      : "clamp(28px, 6.6vw, 58px)";
 
   const morphProgress = useTransform(virtualScroll, [0, 640], [0, 1]);
   const smoothMorph = useSpring(morphProgress, { stiffness: 42, damping: 20 });
@@ -143,6 +164,63 @@ export default function Home() {
       window.clearTimeout(timerTwo);
     };
   }, []);
+
+  useEffect(() => {
+    lastPageScrollRef.current = window.scrollY;
+
+    const resetHeroProgress = () => {
+      scrollRef.current = 0;
+      virtualScroll.set(0);
+      setIntroPhase("circle");
+    };
+
+    const handlePageScroll = () => {
+      const currentScroll = window.scrollY;
+      const isReturningToHome = currentScroll < lastPageScrollRef.current;
+      const isNearHome = currentScroll <= window.innerHeight * 1.15;
+
+      if (isReturningToHome && isNearHome && scrollRef.current > 640) {
+        resetHeroProgress();
+      }
+
+      if (currentScroll <= 4 && scrollRef.current > 0) {
+        resetHeroProgress();
+      }
+
+      lastPageScrollRef.current = currentScroll;
+    };
+
+    window.addEventListener("scroll", handlePageScroll, { passive: true });
+
+    return () => window.removeEventListener("scroll", handlePageScroll);
+  }, [virtualScroll]);
+
+  useEffect(() => {
+    const typeSpeed = 75;
+    const deleteSpeed = 42;
+    const pauseTime = 850;
+
+    const timer = window.setTimeout(() => {
+      setDisplayText((previousText) => {
+        if (isDeleting) {
+          return activeRole.substring(0, previousText.length - 1);
+        }
+
+        return activeRole.substring(0, previousText.length + 1);
+      });
+
+      if (!isDeleting && displayText === activeRole) {
+        setIsDeleting(true);
+      }
+
+      if (isDeleting && displayText === "") {
+        setIsDeleting(false);
+        setRoleIndex((prevIndex) => prevIndex + 1);
+      }
+    }, isDeleting ? deleteSpeed : displayText === activeRole ? pauseTime : typeSpeed);
+
+    return () => window.clearTimeout(timer);
+  }, [activeRole, displayText, isDeleting]);
 
   useEffect(() => {
     const element = containerRef.current;
@@ -235,8 +313,11 @@ export default function Home() {
       <div className="absolute inset-x-0 bottom-0 h-32 bg-linear-to-t from-[#f7f5ef] to-transparent" />
 
       <motion.div
-        style={{ opacity: introOpacity }}
-        className="pointer-events-none absolute left-1/2 top-[48%] z-10 w-full max-w-[720px] -translate-x-1/2 -translate-y-1/2 px-5 text-center"
+        className="pointer-events-none absolute left-1/2 top-[50%] z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center pt-8 text-center sm:top-[50%] sm:pt-10 lg:pt-12"
+        style={{
+          opacity: introOpacity,
+          width: safeTextWidth,
+        }}
       >
         <motion.p
           initial={{ opacity: 0, y: 14, filter: "blur(8px)" }}
@@ -246,9 +327,9 @@ export default function Home() {
               : { opacity: 0, y: 14, filter: "blur(8px)" }
           }
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-          className="text-[10px] font-semibold uppercase tracking-[0.32em] text-black/45"
+          className="text-[clamp(18px,4vw,30px)] font-semibold tracking-normal text-black/55"
         >
-          Scroll to explore
+          Hi, I'm
         </motion.p>
         <motion.h1
           initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
@@ -256,14 +337,18 @@ export default function Home() {
             introPhase === "circle"
               ? { opacity: 1, y: 0, filter: "blur(0px)" }
               : { opacity: 0, y: 18, filter: "blur(10px)" }
-          }
+            }
           transition={{ duration: 0.9, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-4 text-[clamp(42px,11vw,112px)] font-medium leading-[0.9] tracking-normal text-black"
-          style={{ fontFamily: "'Syne', sans-serif" }}
+          className="mt-3 flex min-h-[86px] w-full items-center justify-center overflow-hidden text-balance font-semibold leading-[0.96] tracking-normal text-[#151515] sm:min-h-[104px] lg:min-h-[112px]"
+          style={{
+            fontFamily: "'Syne', sans-serif",
+            fontSize: roleFontSize,
+          }}
         >
-          Sameer
-          <br />
-          Shameem
+          <span className="block max-w-full whitespace-normal break-normal text-center">
+            {displayText}
+            <span className="ml-1 inline-block h-[0.85em] w-[0.09em] translate-y-[0.08em] animate-pulse rounded-sm bg-black" />
+          </span>
         </motion.h1>
       </motion.div>
 

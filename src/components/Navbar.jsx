@@ -44,7 +44,7 @@ export default function Navbar() {
           y:       { duration: 0.5,  ease: [0.22, 1, 0.36, 1], delay: 0.15 },
         }}
         style={{ transformOrigin: "center top", willChange: "transform, opacity" }}
-        className="w-full bg-black/70 backdrop-blur-xl border-b border-white/10"
+        className="w-full  backdrop-blur-xl  border-white/10"
       >
         <div className="w-full px-4 sm:px-6 md:px-12 py-4 md:py-5 flex items-center justify-between">
           {/* Logo */}
@@ -55,7 +55,7 @@ export default function Navbar() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.45, delay: 0.85, ease: [0.22, 1, 0.36, 1] }}
             style={{ willChange: "transform, opacity" }}
-            className="text-white text-[20px] sm:text-[23px] font-semibold tracking-[-0.025em] leading-none"
+            className="text-black text-[20px] sm:text-[23px] font-semibold tracking-[-0.025em] leading-none"
           >
             sameer.
           </motion.a>
@@ -71,7 +71,7 @@ export default function Navbar() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35, delay: 0.85 + i * 0.07, ease: [0.22, 1, 0.36, 1] }}
                 style={{ willChange: "transform, opacity" }}
-                className="text-white/60 hover:text-white transition-colors duration-200 text-[10px] uppercase tracking-[0.22em] font-medium"
+                className="text-black/60 hover:text-black transition-colors duration-200 text-[10px] uppercase tracking-[0.22em] font-medium"
               >
                 {link.label}
               </motion.a>
@@ -82,7 +82,7 @@ export default function Navbar() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: 1.15, ease: [0.22, 1, 0.36, 1] }}
               style={{ willChange: "transform, opacity" }}
-              className="text-white/80 hover:text-white transition-colors duration-200 text-[10px] uppercase tracking-[0.24em]"
+              className="text-black/80 hover:text-black transition-colors duration-200 text-[10px] uppercase tracking-[0.24em]"
             >
               Instagram
             </motion.button>
@@ -94,7 +94,7 @@ export default function Navbar() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: 1.22, ease: [0.22, 1, 0.36, 1] }}
               style={{ willChange: "transform, opacity" }}
-              className="border border-white/20 bg-white/5 hover:bg-white/12 transition-colors duration-200 text-white text-[10px] uppercase tracking-[0.18em] px-4 py-2 rounded-full"
+              className="border border-black/20 bg-black/5 hover:bg-black/12 transition-colors duration-200 text-black text-[10px] uppercase tracking-[0.18em] px-4 py-2 rounded-full"
             >
               Contact
             </motion.a>
