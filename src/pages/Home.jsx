@@ -21,7 +21,24 @@ const imageSources = [
 ];
 
 const totalImages = imageSources.length;
-const maxScroll = 2600;
+
+// MOBILE FIX: scroll budget is now responsive instead of one fixed value.
+// Desktop keeps the original feel (2600 / 640 split). Mobile gets ~60% of
+// that distance (per request), and the morph breakpoint scales down with it
+// so the circle->arc morph still happens at the same relative ~25% point
+// instead of eating a bigger share of the now-shorter mobile scroll.
+const DESKTOP_MAX_SCROLL = 2600;
+const DESKTOP_MORPH_BREAKPOINT = 640;
+const MOBILE_MAX_SCROLL = Math.round(DESKTOP_MAX_SCROLL * 0.6); // ~1560
+const MOBILE_MORPH_BREAKPOINT = Math.round(DESKTOP_MORPH_BREAKPOINT * 0.6); // ~384
+
+// MOBILE FIX: clamp how much a single touchmove/wheel tick can move the
+// virtual scroll. Fast flicks on touch devices can fire one touchmove event
+// with a large deltaY, which previously caused cards to visibly pop/snap to
+// a new position in a single frame. Capping this keeps motion smooth without
+// changing how a normal swipe feels.
+const MAX_SCROLL_STEP = 120;
+
 const lerp = (start, end, amount) => start * (1 - amount) + end * amount;
 
 const roles = [
@@ -109,9 +126,14 @@ export default function Home() {
       ? "clamp(22px, 5.2vw, 44px)"
       : "clamp(28px, 6.6vw, 58px)";
 
-  const morphProgress = useTransform(virtualScroll, [0, 640], [0, 1]);
+  // MOBILE FIX: pick the scroll budget and morph breakpoint based on viewport.
+  // Falls back to desktop values until containerSize is measured on first paint.
+  const maxScroll = isMobileViewport ? MOBILE_MAX_SCROLL : DESKTOP_MAX_SCROLL;
+  const morphBreakpoint = isMobileViewport ? MOBILE_MORPH_BREAKPOINT : DESKTOP_MORPH_BREAKPOINT;
+
+  const morphProgress = useTransform(virtualScroll, [0, morphBreakpoint], [0, 1]);
   const smoothMorph = useSpring(morphProgress, { stiffness: 42, damping: 20 });
-  const scrollRotate = useTransform(virtualScroll, [640, maxScroll], [0, 360]);
+  const scrollRotate = useTransform(virtualScroll, [morphBreakpoint, maxScroll], [0, 360]);
   const smoothScrollRotate = useSpring(scrollRotate, { stiffness: 38, damping: 20 });
   const smoothMouseX = useSpring(mouseX, { stiffness: 30, damping: 22 });
   const contentOpacity = useTransform(smoothMorph, [0.72, 1], [0, 1]);
@@ -179,7 +201,10 @@ export default function Home() {
       const isReturningToHome = currentScroll < lastPageScrollRef.current;
       const isNearHome = currentScroll <= window.innerHeight * 1.15;
 
-      if (isReturningToHome && isNearHome && scrollRef.current > 640) {
+      // MOBILE FIX: the "return to top resets hero" threshold used the old
+      // fixed 640 breakpoint. Now uses the responsive morphBreakpoint so the
+      // reset behaviour matches whichever budget (mobile or desktop) is active.
+      if (isReturningToHome && isNearHome && scrollRef.current > morphBreakpoint) {
         resetHeroProgress();
       }
 
@@ -193,7 +218,7 @@ export default function Home() {
     window.addEventListener("scroll", handlePageScroll, { passive: true });
 
     return () => window.removeEventListener("scroll", handlePageScroll);
-  }, [virtualScroll]);
+  }, [virtualScroll, morphBreakpoint]);
 
   useEffect(() => {
     const typeSpeed = 75;
@@ -227,13 +252,42 @@ export default function Home() {
     if (!element) return undefined;
 
     const applyScroll = (deltaY) => {
-      const nextScroll = Math.min(Math.max(scrollRef.current + deltaY, 0), maxScroll);
-      const consumed = nextScroll !== scrollRef.current;
+      // STUCK-SCROLL FIX: previously this function always mutated scrollRef
+      // and only *afterwards* checked whether the value had changed to decide
+      // if the event should be consumed. That meant the event that pinned
+      // scrollRef at the boundary (0 or maxScroll) was still treated as
+      // "consumed" and preventDefault() still ran on it. The browser's
+      // scroll/momentum for that gesture got cancelled on that tick and on
+      // every tick right up to the edge, so by the time an event finally
+      // came through that didn't move scrollRef, there was no momentum left
+      // for native scroll to continue with — the page sat dead until a brand
+      // new gesture started from a standstill. That dead gap is the "stuck
+      // in the middle" feeling.
+      //
+      // Fix: check BEFORE mutating anything whether we're already sitting at
+      // the boundary in the direction being scrolled. If so, do nothing and
+      // return false immediately — don't touch scrollRef, don't call
+      // preventDefault. Native scroll keeps the gesture's momentum and the
+      // handoff to the next section feels continuous instead of stalling.
+      const scrollingDown = deltaY > 0;
+      const scrollingUp = deltaY < 0;
+      const atMaxBoundary = scrollingDown && scrollRef.current >= maxScroll;
+      const atMinBoundary = scrollingUp && scrollRef.current <= 0;
+
+      if (atMaxBoundary || atMinBoundary) {
+        return false;
+      }
+
+      // MOBILE FIX: clamp the per-event delta so one large touchmove/wheel
+      // tick (common on fast flicks) can't jump scrollRef by a huge amount
+      // in a single frame, which was causing the visible pop/snap glitch.
+      const clampedDelta = Math.max(Math.min(deltaY, MAX_SCROLL_STEP), -MAX_SCROLL_STEP);
+      const nextScroll = Math.min(Math.max(scrollRef.current + clampedDelta, 0), maxScroll);
 
       scrollRef.current = nextScroll;
       virtualScroll.set(nextScroll);
 
-      return consumed;
+      return true;
     };
 
     const handleWheel = (event) => {
@@ -266,7 +320,7 @@ export default function Home() {
       element.removeEventListener("touchstart", handleTouchStart);
       element.removeEventListener("touchmove", handleTouchMove);
     };
-  }, [virtualScroll]);
+  }, [virtualScroll, maxScroll]);
 
   useEffect(() => {
     const element = containerRef.current;
@@ -306,7 +360,7 @@ export default function Home() {
     <section
       id="home"
       ref={containerRef}
-      className="relative min-h-screen overflow-hidden bg-[#f7f5ef] text-[#111111]"
+      className="relative h-screen overflow-hidden bg-[#f7f5ef] text-[#111111]"
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(80,126,255,0.14),transparent_28%),radial-gradient(circle_at_86%_20%,rgba(245,168,62,0.16),transparent_30%),linear-gradient(180deg,#f7f5ef_0%,#ece8dd_100%)]" />
       <div className="absolute inset-x-0 top-0 h-28 bg-linear-to-b from-black/10 to-transparent" />
@@ -370,7 +424,7 @@ export default function Home() {
         </p>
       </motion.div>
 
-      <div className="relative z-10 flex min-h-screen w-full items-center justify-center px-4 pt-20 sm:px-6 lg:px-10">
+      <div className="relative z-10 flex h-screen w-full items-center justify-center px-4 pt-20 sm:px-6 lg:px-10">
         <div className="relative flex h-screen w-full max-w-[1320px] items-center justify-center">
           {imageSources.map((src, index) => {
             let target = { x: 0, y: 0, rotation: 0, scale: 1, opacity: 1 };
@@ -392,7 +446,14 @@ export default function Home() {
             } else {
               const isMobile = containerSize.width < 768;
               const minDimension = Math.min(containerSize.width || 1, containerSize.height || 1);
-              const circleRadius = Math.min(minDimension * (isMobile ? 0.34 : 0.32), 320);
+              // MOBILE FIX: circleRadius was capped at 320 regardless of
+              // screen size. On a ~375px wide phone that pushed cards almost
+              // edge-to-edge, so they appeared to swing off-screen and snap
+              // back during the circle phase. Now mobile scales off viewport
+              // width (38%) with a lower cap (150) — desktop math unchanged.
+              const circleRadius = isMobile
+                ? Math.min((containerSize.width || 1) * 0.38, 150)
+                : Math.min(minDimension * 0.32, 320);
               const circleAngle = (index / totalImages) * 360;
               const circleRad = (circleAngle * Math.PI) / 180;
               const circlePos = {

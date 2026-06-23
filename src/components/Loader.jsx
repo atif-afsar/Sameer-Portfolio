@@ -39,7 +39,7 @@ const Loader = ({ onComplete }) => {
         loop
         className="absolute inset-0 w-full h-full object-cover"
       >
-        <source src="/videos/IMG_2752.MOV" type="video/mp4" />
+        <source src="/videos/IMG_4136.MOV" type="video/mp4" />
       </motion.video>
     </motion.div>
   );
