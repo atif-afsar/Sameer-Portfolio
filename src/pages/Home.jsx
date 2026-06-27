@@ -41,6 +41,90 @@ const MAX_SCROLL_STEP = 120;
 
 const lerp = (start, end, amount) => start * (1 - amount) + end * amount;
 
+const CARD_WIDTH = { base: 54, sm: 62, lg: 70 };
+const CARD_HEIGHT = { base: 76, sm: 86, lg: 98 };
+const RING_TEXT_GAP = 16;
+
+function getCardDimensions(viewportWidth) {
+  if (viewportWidth >= 1024) {
+    return { width: CARD_WIDTH.lg, height: CARD_HEIGHT.lg };
+  }
+  if (viewportWidth >= 640) {
+    return { width: CARD_WIDTH.sm, height: CARD_HEIGHT.sm };
+  }
+  return { width: CARD_WIDTH.base, height: CARD_HEIGHT.base };
+}
+
+function getCircleRadius(viewportWidth, viewportHeight) {
+  const isMobile = viewportWidth < 768;
+  const minDimension = Math.min(viewportWidth || 360, viewportHeight || 640);
+
+  return isMobile
+    ? Math.min((viewportWidth || 360) * 0.38, 150)
+    : Math.min(minDimension * 0.32, 320);
+}
+
+function getOrbitTextBounds(viewportWidth, viewportHeight) {
+  const circleRadius = getCircleRadius(viewportWidth, viewportHeight);
+  const { width: cardWidth, height: cardHeight } = getCardDimensions(viewportWidth);
+
+  return {
+    circleRadius,
+    cardWidth,
+    cardHeight,
+    isMobile: viewportWidth < 768,
+    safeInnerWidth: Math.max(
+      96,
+      Math.floor(2 * (circleRadius - cardWidth / 2 - RING_TEXT_GAP))
+    ),
+    safeInnerHeight: Math.max(
+      80,
+      Math.floor(2 * (circleRadius - cardHeight / 2 - RING_TEXT_GAP))
+    ),
+  };
+}
+
+function fitFontSize(text, maxWidth, { max, min, charWidthRatio }) {
+  const length = Math.max(text.length, 1);
+  const fitted = maxWidth / (length * charWidthRatio);
+
+  return Math.min(max, Math.max(min, fitted));
+}
+
+function getIntroRoleFontSizes(displayText, activeRole, bounds) {
+  const { safeInnerWidth, safeInnerHeight, isMobile } = bounds;
+  const roleText = displayText || activeRole;
+  const introMax = isMobile ? 22 : 30;
+  const introMin = isMobile ? 14 : 17;
+  const roleMax = isMobile ? 28 : 52;
+  const roleMin = isMobile ? 12 : 18;
+
+  let roleSize = fitFontSize(roleText, safeInnerWidth, {
+    max: roleMax,
+    min: roleMin,
+    charWidthRatio: 0.56,
+  });
+  let introSize = fitFontSize("Hi, I'm", safeInnerWidth, {
+    max: introMax,
+    min: introMin,
+    charWidthRatio: 0.62,
+  });
+
+  const lineGap = isMobile ? 8 : 10;
+  const blockHeight = introSize * 1.2 + lineGap + roleSize * 1.05;
+
+  if (blockHeight > safeInnerHeight) {
+    const scale = safeInnerHeight / blockHeight;
+    roleSize = Math.max(roleMin, roleSize * scale);
+    introSize = Math.max(introMin, introSize * scale);
+  }
+
+  return {
+    introFontSize: `${introSize}px`,
+    roleFontSize: `${roleSize}px`,
+  };
+}
+
 const roles = [
   "Digital Marketer",
   "Content Creator",
@@ -101,7 +185,7 @@ function FlipCard({ src, index, target }) {
   );
 }
 
-export default function Home() {
+export default function Home({ isActive = true, onReachEnd }) {
   const [introPhase, setIntroPhase] = useState("scatter");
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const [morphValue, setMorphValue] = useState(0);
@@ -112,19 +196,18 @@ export default function Home() {
   const [isDeleting, setIsDeleting] = useState(false);
   const containerRef = useRef(null);
   const scrollRef = useRef(0);
-  const lastPageScrollRef = useRef(0);
   const virtualScroll = useMotionValue(0);
   const mouseX = useMotionValue(0);
   const activeRole = roles[roleIndex % roles.length];
   const isMobileViewport = containerSize.width < 768;
-  const safeTextWidth = Math.min(
-    isMobileViewport ? 210 : 430,
-    Math.max(160, (containerSize.width || 360) * (isMobileViewport ? 0.5 : 0.33))
+  const orbitTextBounds = useMemo(
+    () => getOrbitTextBounds(containerSize.width, containerSize.height),
+    [containerSize.width, containerSize.height]
   );
-  const roleFontSize =
-    activeRole.length > 18
-      ? "clamp(22px, 5.2vw, 44px)"
-      : "clamp(28px, 6.6vw, 58px)";
+  const { introFontSize, roleFontSize } = useMemo(
+    () => getIntroRoleFontSizes(displayText, activeRole, orbitTextBounds),
+    [displayText, activeRole, orbitTextBounds]
+  );
 
   // MOBILE FIX: pick the scroll budget and morph breakpoint based on viewport.
   // Falls back to desktop values until containerSize is measured on first paint.
@@ -188,39 +271,6 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    lastPageScrollRef.current = window.scrollY;
-
-    const resetHeroProgress = () => {
-      scrollRef.current = 0;
-      virtualScroll.set(0);
-      setIntroPhase("circle");
-    };
-
-    const handlePageScroll = () => {
-      const currentScroll = window.scrollY;
-      const isReturningToHome = currentScroll < lastPageScrollRef.current;
-      const isNearHome = currentScroll <= window.innerHeight * 1.15;
-
-      // MOBILE FIX: the "return to top resets hero" threshold used the old
-      // fixed 640 breakpoint. Now uses the responsive morphBreakpoint so the
-      // reset behaviour matches whichever budget (mobile or desktop) is active.
-      if (isReturningToHome && isNearHome && scrollRef.current > morphBreakpoint) {
-        resetHeroProgress();
-      }
-
-      if (currentScroll <= 4 && scrollRef.current > 0) {
-        resetHeroProgress();
-      }
-
-      lastPageScrollRef.current = currentScroll;
-    };
-
-    window.addEventListener("scroll", handlePageScroll, { passive: true });
-
-    return () => window.removeEventListener("scroll", handlePageScroll);
-  }, [virtualScroll, morphBreakpoint]);
-
-  useEffect(() => {
     const typeSpeed = 75;
     const deleteSpeed = 42;
     const pauseTime = 850;
@@ -249,38 +299,25 @@ export default function Home() {
 
   useEffect(() => {
     const element = containerRef.current;
-    if (!element) return undefined;
+    if (!element || !isActive) return undefined;
 
     const applyScroll = (deltaY) => {
-      // STUCK-SCROLL FIX: previously this function always mutated scrollRef
-      // and only *afterwards* checked whether the value had changed to decide
-      // if the event should be consumed. That meant the event that pinned
-      // scrollRef at the boundary (0 or maxScroll) was still treated as
-      // "consumed" and preventDefault() still ran on it. The browser's
-      // scroll/momentum for that gesture got cancelled on that tick and on
-      // every tick right up to the edge, so by the time an event finally
-      // came through that didn't move scrollRef, there was no momentum left
-      // for native scroll to continue with — the page sat dead until a brand
-      // new gesture started from a standstill. That dead gap is the "stuck
-      // in the middle" feeling.
-      //
-      // Fix: check BEFORE mutating anything whether we're already sitting at
-      // the boundary in the direction being scrolled. If so, do nothing and
-      // return false immediately — don't touch scrollRef, don't call
-      // preventDefault. Native scroll keeps the gesture's momentum and the
-      // handoff to the next section feels continuous instead of stalling.
       const scrollingDown = deltaY > 0;
       const scrollingUp = deltaY < 0;
       const atMaxBoundary = scrollingDown && scrollRef.current >= maxScroll;
       const atMinBoundary = scrollingUp && scrollRef.current <= 0;
 
-      if (atMaxBoundary || atMinBoundary) {
+      if (atMaxBoundary) {
+        if (scrollingDown) {
+          onReachEnd?.();
+        }
         return false;
       }
 
-      // MOBILE FIX: clamp the per-event delta so one large touchmove/wheel
-      // tick (common on fast flicks) can't jump scrollRef by a huge amount
-      // in a single frame, which was causing the visible pop/snap glitch.
+      if (atMinBoundary) {
+        return false;
+      }
+
       const clampedDelta = Math.max(Math.min(deltaY, MAX_SCROLL_STEP), -MAX_SCROLL_STEP);
       const nextScroll = Math.min(Math.max(scrollRef.current + clampedDelta, 0), maxScroll);
 
@@ -320,7 +357,7 @@ export default function Home() {
       element.removeEventListener("touchstart", handleTouchStart);
       element.removeEventListener("touchmove", handleTouchMove);
     };
-  }, [virtualScroll, maxScroll]);
+  }, [virtualScroll, maxScroll, isActive, onReachEnd]);
 
   useEffect(() => {
     const element = containerRef.current;
@@ -367,10 +404,12 @@ export default function Home() {
       <div className="absolute inset-x-0 bottom-0 h-32 bg-linear-to-t from-[#f7f5ef] to-transparent" />
 
       <motion.div
-        className="pointer-events-none absolute left-1/2 top-[50%] z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center pt-8 text-center sm:top-[50%] sm:pt-10 lg:pt-12"
+        className="pointer-events-none absolute left-1/2 top-[50%] z-30 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center text-center"
         style={{
           opacity: introOpacity,
-          width: safeTextWidth,
+          width: orbitTextBounds.safeInnerWidth,
+          maxWidth: orbitTextBounds.safeInnerWidth,
+          maxHeight: orbitTextBounds.safeInnerHeight,
         }}
       >
         <motion.p
@@ -381,7 +420,8 @@ export default function Home() {
               : { opacity: 0, y: 14, filter: "blur(8px)" }
           }
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-          className="text-[clamp(18px,4vw,30px)] font-semibold tracking-normal text-black/55"
+          className="block w-full whitespace-nowrap font-semibold leading-none tracking-normal text-black/55"
+          style={{ fontSize: introFontSize }}
         >
           Hi, I'm
         </motion.p>
@@ -393,13 +433,14 @@ export default function Home() {
               : { opacity: 0, y: 18, filter: "blur(10px)" }
             }
           transition={{ duration: 0.9, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-3 flex min-h-[86px] w-full items-center justify-center overflow-hidden text-balance font-semibold leading-[0.96] tracking-normal text-[#151515] sm:min-h-[104px] lg:min-h-[112px]"
+          className="mt-2 flex w-full items-center justify-center font-semibold leading-none tracking-normal text-[#151515] sm:mt-2.5"
           style={{
             fontFamily: "'Syne', sans-serif",
             fontSize: roleFontSize,
+            maxWidth: orbitTextBounds.safeInnerWidth,
           }}
         >
-          <span className="block max-w-full whitespace-normal break-normal text-center">
+          <span className="block max-w-full whitespace-nowrap text-center">
             {displayText}
             <span className="ml-1 inline-block h-[0.85em] w-[0.09em] translate-y-[0.08em] animate-pulse rounded-sm bg-black" />
           </span>
@@ -444,16 +485,8 @@ export default function Home() {
                 opacity: 1,
               };
             } else {
-              const isMobile = containerSize.width < 768;
-              const minDimension = Math.min(containerSize.width || 1, containerSize.height || 1);
-              // MOBILE FIX: circleRadius was capped at 320 regardless of
-              // screen size. On a ~375px wide phone that pushed cards almost
-              // edge-to-edge, so they appeared to swing off-screen and snap
-              // back during the circle phase. Now mobile scales off viewport
-              // width (38%) with a lower cap (150) — desktop math unchanged.
-              const circleRadius = isMobile
-                ? Math.min((containerSize.width || 1) * 0.38, 150)
-                : Math.min(minDimension * 0.32, 320);
+              const isMobile = orbitTextBounds.isMobile;
+              const circleRadius = orbitTextBounds.circleRadius;
               const circleAngle = (index / totalImages) * 360;
               const circleRad = (circleAngle * Math.PI) / 180;
               const circlePos = {
@@ -502,7 +535,7 @@ export default function Home() {
           Brand work / Lifestyle / Social growth
         </p>
         <p className="hidden max-w-[250px] text-right text-[10px] font-medium uppercase leading-[1.7] tracking-[0.24em] sm:block">
-          Keep scrolling for the full portfolio
+          Keep scrolling for reels
         </p>
       </motion.div>
     </section>

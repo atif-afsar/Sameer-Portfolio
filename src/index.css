@@ -1,1 +1,57 @@
 @import "tailwindcss";
+
+html.horizontal-shell-active,
+html.horizontal-shell-active body {
+  overflow: hidden;
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.reel-card {
+  width: min(62vw, 200px);
+}
+
+@media (min-width: 640px) {
+  .reel-card {
+    width: min(34vw, 230px);
+  }
+}
+
+@media (min-width: 1024px) {
+  .reel-card {
+    width: 250px;
+  }
+}
+
+.reel-track {
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+}
+
+.reel-card-inner {
+  position: relative;
+  aspect-ratio: 9 / 16;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  background: #101010;
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.16);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  transform: translate3d(0, 0, 0);
+  contain: layout paint;
+}
+
+.digital-cards-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
