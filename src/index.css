@@ -5,6 +5,13 @@ html.horizontal-shell-active body {
   overflow: hidden;
   height: 100%;
   overscroll-behavior: none;
+  touch-action: none;
+}
+
+.section-scroll-target {
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .no-scrollbar {
@@ -16,19 +23,36 @@ html.horizontal-shell-active body {
   display: none;
 }
 
-.reel-card {
-  width: min(62vw, 200px);
+.reel-track--snap {
+  --reel-card-width: min(82vw, 300px);
+  gap: clamp(1rem, 4vw, 2rem);
+  padding-left: max(calc(50vw - var(--reel-card-width) / 2), 0.75rem);
+  padding-right: max(calc(50vw - var(--reel-card-width) / 2), 0.75rem);
 }
 
 @media (min-width: 640px) {
-  .reel-card {
-    width: min(34vw, 230px);
+  .reel-track--snap {
+    --reel-card-width: min(52vw, 320px);
   }
 }
 
 @media (min-width: 1024px) {
-  .reel-card {
-    width: 250px;
+  .reel-track--snap {
+    --reel-card-width: 300px;
+  }
+}
+
+.reel-card {
+  width: var(--reel-card-width, min(82vw, 300px));
+}
+
+.section-track-viewport {
+  max-height: calc(100vh - 5.5rem);
+}
+
+@media (min-width: 640px) {
+  .section-track-viewport {
+    max-height: calc(100vh - 6rem);
   }
 }
 
@@ -41,6 +65,8 @@ html.horizontal-shell-active body {
 .reel-card-inner {
   position: relative;
   aspect-ratio: 9 / 16;
+  width: 100%;
+  max-height: min(68vh, 560px);
   overflow: hidden;
   border-radius: 1.25rem;
   background: #101010;
@@ -54,4 +80,49 @@ html.horizontal-shell-active body {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   touch-action: pan-y;
+}
+
+.expertise-track {
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+}
+
+.expertise-track--snap {
+  --expertise-card-width: min(92vw, 420px);
+  gap: clamp(1.25rem, 5vw, 2.5rem);
+  padding-left: max(calc(50vw - var(--expertise-card-width) / 2), 0.75rem);
+  padding-right: max(calc(50vw - var(--expertise-card-width) / 2), 0.75rem);
+}
+
+@media (min-width: 640px) {
+  .expertise-track--snap {
+    --expertise-card-width: min(72vw, 480px);
+    gap: clamp(1.5rem, 3vw, 2.75rem);
+  }
+}
+
+@media (min-width: 1024px) {
+  .expertise-track--snap {
+    --expertise-card-width: 460px;
+  }
+}
+
+.expertise-track-card {
+  width: var(--expertise-card-width, min(92vw, 420px));
+  min-height: min(64vh, 580px);
+  max-height: min(72vh, 620px);
+}
+
+@media (min-width: 640px) {
+  .expertise-track-card {
+    min-height: min(58vh, 560px);
+  }
+}
+
+@media (min-width: 1024px) {
+  .expertise-track-card {
+    min-height: 520px;
+    max-height: 600px;
+  }
 }

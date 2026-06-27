@@ -301,24 +301,53 @@ export default function Home({ isActive = true, onReachEnd }) {
     const element = containerRef.current;
     if (!element || !isActive) return undefined;
 
+    const endTriggeredRef = { current: false };
+    const boundaryCooldownRef = { current: false };
+    const BOUNDARY_COOLDOWN_MS = 520;
+
+    const triggerEnd = () => {
+      if (boundaryCooldownRef.current || endTriggeredRef.current || !onReachEnd) return;
+      endTriggeredRef.current = true;
+      boundaryCooldownRef.current = true;
+      onReachEnd();
+      window.setTimeout(() => {
+        boundaryCooldownRef.current = false;
+      }, BOUNDARY_COOLDOWN_MS);
+    };
+
+    const getTouchMultiplier = () =>
+      window.matchMedia("(pointer: coarse)").matches ||
+      window.matchMedia("(max-width: 767px)").matches
+        ? 2.8
+        : 1;
+
+    const getMaxStep = () =>
+      window.matchMedia("(pointer: coarse)").matches ||
+      window.matchMedia("(max-width: 767px)").matches
+        ? 200
+        : MAX_SCROLL_STEP;
+
     const applyScroll = (deltaY) => {
       const scrollingDown = deltaY > 0;
       const scrollingUp = deltaY < 0;
-      const atMaxBoundary = scrollingDown && scrollRef.current >= maxScroll;
-      const atMinBoundary = scrollingUp && scrollRef.current <= 0;
+      const atMaxBoundary = scrollRef.current >= maxScroll - 1;
+      const atMinBoundary = scrollRef.current <= 0;
+      const maxStep = getMaxStep();
 
-      if (atMaxBoundary) {
-        if (scrollingDown) {
-          onReachEnd?.();
-        }
+      if (scrollingDown && atMaxBoundary) {
+        triggerEnd();
         return false;
       }
 
-      if (atMinBoundary) {
+      if (scrollingUp && atMinBoundary) {
         return false;
       }
 
-      const clampedDelta = Math.max(Math.min(deltaY, MAX_SCROLL_STEP), -MAX_SCROLL_STEP);
+      if (!atMaxBoundary) {
+        endTriggeredRef.current = false;
+      }
+
+      const clampedDelta = Math.max(Math.min(deltaY, maxStep), -maxStep);
       const nextScroll = Math.min(Math.max(scrollRef.current + clampedDelta, 0), maxScroll);
 
       scrollRef.current = nextScroll;
@@ -334,13 +363,19 @@ export default function Home({ isActive = true, onReachEnd }) {
     };
 
     let touchStartY = 0;
+    let touchTracking = false;
+
     const handleTouchStart = (event) => {
+      if (event.touches.length !== 1) return;
+      touchTracking = true;
       touchStartY = event.touches[0].clientY;
     };
 
     const handleTouchMove = (event) => {
+      if (!touchTracking || event.touches.length !== 1) return;
+
       const currentY = event.touches[0].clientY;
-      const deltaY = touchStartY - currentY;
+      const deltaY = (touchStartY - currentY) * getTouchMultiplier();
       touchStartY = currentY;
 
       if (applyScroll(deltaY)) {
@@ -348,14 +383,25 @@ export default function Home({ isActive = true, onReachEnd }) {
       }
     };
 
+    const handleTouchEnd = () => {
+      touchTracking = false;
+    };
+
+    const touchOptions = { passive: false, capture: true };
+    const passiveCapture = { passive: true, capture: true };
+
     element.addEventListener("wheel", handleWheel, { passive: false });
-    element.addEventListener("touchstart", handleTouchStart, { passive: true });
-    element.addEventListener("touchmove", handleTouchMove, { passive: false });
+    element.addEventListener("touchstart", handleTouchStart, passiveCapture);
+    element.addEventListener("touchmove", handleTouchMove, touchOptions);
+    element.addEventListener("touchend", handleTouchEnd, passiveCapture);
+    element.addEventListener("touchcancel", handleTouchEnd, passiveCapture);
 
     return () => {
       element.removeEventListener("wheel", handleWheel);
-      element.removeEventListener("touchstart", handleTouchStart);
-      element.removeEventListener("touchmove", handleTouchMove);
+      element.removeEventListener("touchstart", handleTouchStart, passiveCapture);
+      element.removeEventListener("touchmove", handleTouchMove, touchOptions);
+      element.removeEventListener("touchend", handleTouchEnd, passiveCapture);
+      element.removeEventListener("touchcancel", handleTouchEnd, passiveCapture);
     };
   }, [virtualScroll, maxScroll, isActive, onReachEnd]);
 
@@ -397,7 +443,7 @@ export default function Home({ isActive = true, onReachEnd }) {
     <section
       id="home"
       ref={containerRef}
-      className="relative h-screen overflow-hidden bg-[#f7f5ef] text-[#111111]"
+      className="section-scroll-target relative h-screen overflow-hidden bg-[#f7f5ef] text-[#111111]"
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(80,126,255,0.14),transparent_28%),radial-gradient(circle_at_86%_20%,rgba(245,168,62,0.16),transparent_30%),linear-gradient(180deg,#f7f5ef_0%,#ece8dd_100%)]" />
       <div className="absolute inset-x-0 top-0 h-28 bg-linear-to-b from-black/10 to-transparent" />

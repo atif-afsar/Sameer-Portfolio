@@ -1,5 +1,11 @@
-import { memo, useEffect, useRef, useState } from "react";
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { motion, useTransform } from "framer-motion";
+import {
+  INTRO_PHASE_END,
+  useMeasureSnapTrack,
+  useSectionScroll,
+  useSnapTrackMotion,
+} from "../hooks/useSectionScroll";
 
 const reels = [
   {
@@ -36,9 +42,6 @@ const reels = [
   },
 ];
 
-const REEL_SCROLL_STEP = 0.0018;
-const MAX_REEL_SCROLL_STEP = 0.06;
-
 const homeBackground = (
   <>
     <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(80,126,255,0.14),transparent_28%),radial-gradient(circle_at_86%_20%,rgba(245,168,62,0.16),transparent_30%),linear-gradient(180deg,#f7f5ef_0%,#ece8dd_100%)]" />
@@ -46,6 +49,67 @@ const homeBackground = (
     <div className="absolute inset-x-0 bottom-0 h-32 bg-linear-to-t from-[#f7f5ef] to-transparent" />
   </>
 );
+
+const bubblePalette = [
+  "rgba(80,126,255,0.14)",
+  "rgba(245,168,62,0.12)",
+  "rgba(255,255,255,0.35)",
+  "rgba(80,126,255,0.08)",
+  "rgba(245,168,62,0.1)",
+];
+
+function FloatingBubbles({ opacity }) {
+  const bubbles = useMemo(
+    () =>
+      Array.from({ length: 16 }, (_, index) => ({
+        id: index,
+        size: 36 + (index % 6) * 22,
+        left: `${6 + ((index * 19) % 88)}%`,
+        top: `${8 + ((index * 27) % 78)}%`,
+        color: bubblePalette[index % bubblePalette.length],
+        delay: index * 0.35,
+        duration: 4.5 + (index % 4) * 1.2,
+        driftX: index % 2 === 0 ? 14 : -12,
+        driftY: -16 - (index % 3) * 8,
+      })),
+    []
+  );
+
+  return (
+    <motion.div
+      style={{ opacity }}
+      className="pointer-events-none absolute inset-0 z-10 overflow-hidden"
+      aria-hidden="true"
+    >
+      {bubbles.map((bubble) => (
+        <motion.span
+          key={bubble.id}
+          className="absolute rounded-full border border-white/50 shadow-[0_8px_28px_rgba(0,0,0,0.06)] backdrop-blur-[2px]"
+          style={{
+            width: bubble.size,
+            height: bubble.size,
+            left: bubble.left,
+            top: bubble.top,
+            background: bubble.color,
+          }}
+          initial={{ scale: 0.6, opacity: 0 }}
+          animate={{
+            scale: [0.85, 1.05, 0.92, 1.02, 0.88],
+            opacity: [0.28, 0.48, 0.32, 0.42, 0.3],
+            x: [0, bubble.driftX, -bubble.driftX * 0.4, bubble.driftX * 0.6, 0],
+            y: [0, bubble.driftY, bubble.driftY * 0.35, bubble.driftY * 0.7, 0],
+          }}
+          transition={{
+            duration: bubble.duration,
+            repeat: Infinity,
+            delay: bubble.delay,
+            ease: "easeInOut",
+          }}
+        />
+      ))}
+    </motion.div>
+  );
+}
 
 function getReelShortcode(url) {
   const match = url.match(/instagram\.com\/(?:reel|reels|p)\/([^/?#]+)/i);
@@ -98,7 +162,7 @@ const ReelCard = memo(function ReelCard({ reel }) {
   const footerLabel = isExternal ? reel.label : "Instagram Reel";
 
   return (
-    <article ref={cardRef} className="reel-card shrink-0">
+    <article ref={cardRef} className="reel-card shrink-0 snap-start">
       <div className="reel-card-inner">
         {isExternal ? (
           <a
@@ -132,7 +196,7 @@ const ReelCard = memo(function ReelCard({ reel }) {
           <iframe
             title={reel.title}
             src={`https://www.instagram.com/reel/${shortcode}/embed/`}
-            className="h-full w-full border-0 bg-black"
+            className="pointer-events-none h-full w-full border-0 bg-black"
             loading="lazy"
             allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
             referrerPolicy="strict-origin-when-cross-origin"
@@ -163,148 +227,57 @@ const ReelCard = memo(function ReelCard({ reel }) {
 });
 
 export default function ReelsSection({ isActive = true, onReachStart, onReachEnd }) {
-  const sectionRef = useRef(null);
   const trackViewportRef = useRef(null);
   const trackRef = useRef(null);
-  const trackRangeRef = useRef({ start: 0, end: -600 });
-  const progressRef = useRef(0);
-  const progress = useMotionValue(0);
-  const smoothProgress = useSpring(progress, { stiffness: 52, damping: 22, mass: 0.75 });
 
-  const hintOpacity = useTransform(smoothProgress, [0, 0.08, 0.85, 1], [1, 0.45, 0.45, 0]);
-  const trackX = useTransform(smoothProgress, (value) => {
-    const { start, end } = trackRangeRef.current;
-    return start + (end - start) * value;
-  });
+  const {
+    sectionRef,
+    smoothProgress,
+    introProgress,
+    trackProgress,
+  } = useSectionScroll({ isActive, onReachStart, onReachEnd });
 
-  useEffect(() => {
-    const measureTrack = () => {
-      const track = trackRef.current;
-      const viewport = trackViewportRef.current;
-      if (!track || !viewport) return;
+  const snapRef = useMeasureSnapTrack(trackRef, trackViewportRef, ".reel-card", reels.length);
+  const { trackLayerOpacity, trackX, browseHintOpacity } = useSnapTrackMotion(
+    trackProgress,
+    snapRef
+  );
 
-      const viewportWidth = viewport.clientWidth;
-      const start = 0;
-      const overflow = track.scrollWidth - viewportWidth + 16;
-      const end = overflow > 0 ? -overflow : 0;
+  const introLayerVisibility = useTransform(smoothProgress, (value) =>
+    value > INTRO_PHASE_END + 0.02 ? "hidden" : "visible"
+  );
 
-      trackRangeRef.current = { start, end };
-    };
-
-    measureTrack();
-    window.addEventListener("resize", measureTrack, { passive: true });
-    return () => window.removeEventListener("resize", measureTrack);
-  }, []);
-
-  useEffect(() => {
-    const element = sectionRef.current;
-    if (!element || !isActive) return undefined;
-
-    const applyScroll = (deltaY) => {
-      const scrollingDown = deltaY > 0;
-      const scrollingUp = deltaY < 0;
-      const atMax = progressRef.current >= 1;
-      const atMin = progressRef.current <= 0;
-
-      if (scrollingDown && atMax) {
-        onReachEnd?.();
-        return false;
-      }
-
-      if (scrollingUp && atMin) {
-        onReachStart?.();
-        return false;
-      }
-
-      const clampedDelta = Math.max(
-        Math.min(deltaY * REEL_SCROLL_STEP, MAX_REEL_SCROLL_STEP),
-        -MAX_REEL_SCROLL_STEP
-      );
-      const nextProgress = Math.min(Math.max(progressRef.current + clampedDelta, 0), 1);
-
-      progressRef.current = nextProgress;
-      progress.set(nextProgress);
-
-      return true;
-    };
-
-    const handleWheel = (event) => {
-      if (applyScroll(event.deltaY)) {
-        event.preventDefault();
-      }
-    };
-
-    let touchStartY = 0;
-    const handleTouchStart = (event) => {
-      touchStartY = event.touches[0].clientY;
-    };
-
-    const handleTouchMove = (event) => {
-      const currentY = event.touches[0].clientY;
-      const deltaY = touchStartY - currentY;
-      touchStartY = currentY;
-
-      if (applyScroll(deltaY * 2.4)) {
-        event.preventDefault();
-      }
-    };
-
-    element.addEventListener("wheel", handleWheel, { passive: false });
-    element.addEventListener("touchstart", handleTouchStart, { passive: true });
-    element.addEventListener("touchmove", handleTouchMove, { passive: false });
-
-    return () => {
-      element.removeEventListener("wheel", handleWheel);
-      element.removeEventListener("touchstart", handleTouchStart);
-      element.removeEventListener("touchmove", handleTouchMove);
-    };
-  }, [isActive, onReachStart, onReachEnd, progress]);
+  const bubbleOpacity = useTransform(introProgress, [0, 0.15, 0.75, 1], [1, 1, 0.35, 0]);
+  const headingScale = useTransform(introProgress, [0, 0.35, 0.72, 1], [1, 1, 1.28, 1.55]);
+  const headingOpacity = useTransform(introProgress, [0, 0.3, 0.68, 1], [1, 1, 0.45, 0]);
+  const headingBlur = useTransform(introProgress, [0, 0.5, 1], [0, 0, 12]);
+  const headingFilter = useTransform(headingBlur, (blur) => `blur(${blur}px)`);
+  const introHintOpacity = useTransform(introProgress, [0, 0.12, 0.55, 0.85], [0, 1, 0.55, 0]);
 
   return (
     <section
       id="reels"
       ref={sectionRef}
-      className="relative h-screen w-full overflow-hidden bg-[#f7f5ef] text-[#111111]"
+      className="section-scroll-target relative h-screen w-full overflow-hidden bg-[#f7f5ef] text-[#111111]"
     >
       {homeBackground}
 
-      <div className="relative flex h-full flex-col justify-center gap-5 pt-16 sm:gap-6 sm:pt-20 md:flex-row md:items-center md:gap-8">
-        <div className="relative z-20 shrink-0 px-5 sm:px-8 md:w-[34%] md:max-w-[360px] md:px-10 lg:w-[32%] lg:max-w-[400px] lg:pl-12 lg:pr-6">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-black/45">
-              Instagram Reels
-            </p>
-            <h2
-              className="mt-3 text-[clamp(32px,7vw,56px)] font-medium leading-[0.95] tracking-normal text-black"
-              style={{ fontFamily: "'Syne', sans-serif" }}
-            >
-              Content
-              <br />
-              creation
-            </h2>
-            <p className="mt-4 max-w-[280px] text-[13px] leading-[1.65] text-black/55 sm:text-[14px]">
-              Scroll through short-form work, campaign clips, and a shared album.
-            </p>
-          </div>
-
-          <motion.p
-            style={{ opacity: hintOpacity }}
-            className="hidden text-[10px] font-medium uppercase tracking-[0.24em] text-black/40 md:block"
-          >
-            Scroll to browse reels
-          </motion.p>
-        </div>
-
+      {/* Phase 2 — horizontal reel track */}
+      <motion.div
+        style={{ opacity: trackLayerOpacity }}
+        className="absolute inset-0 z-20 flex items-center pt-14 sm:pt-16"
+      >
         <div
           ref={trackViewportRef}
-          className="relative min-h-0 min-w-0 flex-1 overflow-hidden py-1 md:py-0"
+          className="section-track-viewport relative h-full min-h-0 w-full overflow-hidden"
         >
-          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-6 bg-linear-to-l from-[#f7f5ef] to-transparent sm:w-10 lg:w-14" />
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-4 bg-linear-to-r from-[#f7f5ef] to-transparent sm:w-6" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-linear-to-l from-[#f7f5ef] to-transparent sm:w-12 lg:w-16" />
 
           <motion.div
             ref={trackRef}
             style={{ x: trackX, translateZ: 0 }}
-            className="reel-track relative z-0 flex items-center gap-2 sm:gap-3"
+            className="reel-track reel-track--snap absolute left-0 top-1/2 z-0 flex -translate-y-1/2 items-center"
           >
             {reels.map((reel) => (
               <ReelCard key={reel.id} reel={reel} />
@@ -313,12 +286,69 @@ export default function ReelsSection({ isActive = true, onReachStart, onReachEnd
         </div>
 
         <motion.p
-          style={{ opacity: hintOpacity }}
-          className="pointer-events-none absolute bottom-8 left-0 right-0 z-20 text-center text-[10px] font-medium uppercase tracking-[0.24em] text-black/40 md:hidden"
+          style={{ opacity: browseHintOpacity }}
+          className="pointer-events-none absolute bottom-8 left-0 right-0 z-30 text-center text-[10px] font-medium uppercase tracking-[0.24em] text-black/40"
         >
           Scroll to browse reels
         </motion.p>
-      </div>
+      </motion.div>
+
+      {/* Phase 1 — bubbles + centered heading intro */}
+      <motion.div
+        style={{ visibility: introLayerVisibility }}
+        className="pointer-events-none absolute inset-0 z-30"
+      >
+        <FloatingBubbles opacity={bubbleOpacity} />
+
+        <div className="flex h-full items-center justify-center px-5 pt-14 sm:px-8 sm:pt-16">
+          <motion.div
+            style={{
+              scale: headingScale,
+              opacity: headingOpacity,
+              filter: headingFilter,
+            }}
+            className="relative z-20 w-full max-w-[580px] px-2 sm:px-0"
+          >
+            <div className="relative overflow-hidden rounded-[1.75rem] border border-white/70 bg-white/55 px-7 py-9 shadow-[0_28px_70px_rgba(0,0,0,0.08)] backdrop-blur-xl sm:rounded-[2rem] sm:px-10 sm:py-11">
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.85),transparent_58%)]" />
+              <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-[rgba(80,126,255,0.12)] blur-2xl" />
+              <div className="pointer-events-none absolute -bottom-10 -left-6 h-28 w-28 rounded-full bg-[rgba(245,168,62,0.14)] blur-2xl" />
+
+              <div className="relative text-center">
+                <span className="inline-flex items-center rounded-full border border-black/10 bg-white/80 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.32em] text-[#3d3d3d] shadow-sm">
+                  Instagram Reels
+                </span>
+
+                <h2
+                  className="mt-7 text-[clamp(2.5rem,9vw,4.75rem)] font-semibold leading-[0.92] tracking-[-0.03em] text-[#111111]"
+                  style={{ fontFamily: "'Syne', sans-serif" }}
+                >
+                  <span className="block">Content</span>
+                  <span
+                    className="mt-1 block text-[clamp(2.35rem,8.5vw,4.5rem)] font-normal italic leading-[0.95] text-[#1a1a1a]"
+                    style={{ fontFamily: "'Cormorant Garamond', serif" }}
+                  >
+                    creation
+                  </span>
+                </h2>
+
+                <div className="mx-auto mt-6 h-px w-14 bg-linear-to-r from-transparent via-black/20 to-transparent" />
+
+                <p className="mx-auto mt-6 max-w-[380px] text-[14px] font-medium leading-[1.7] tracking-[0.01em] text-[#2a2a2a] sm:text-[15px]">
+                  Scroll through short-form work, campaign clips, and a shared album.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        <motion.p
+          style={{ opacity: introHintOpacity }}
+          className="absolute bottom-8 left-0 right-0 text-center text-[10px] font-semibold uppercase tracking-[0.28em] text-[#333333]"
+        >
+          Scroll to begin
+        </motion.p>
+      </motion.div>
     </section>
   );
 }
