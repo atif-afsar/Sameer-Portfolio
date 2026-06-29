@@ -8,136 +8,216 @@ const socialLinks = [
   { name: "LinkedIn", url: "https://linkedin.com" },
 ];
 
-const transition = { duration: 1, ease: [0.16, 1, 0.3, 1] };
+const ease = [0.16, 1, 0.3, 1];
 
-export default function Footer() {
+function Reveal({
+  children,
+  className = "",
+  delay = 0,
+  y = 36,
+  scrollRoot,
+}) {
+  return (
+    <motion.div
+      className={className}
+      initial={{ opacity: 0, y }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.85, delay, ease }}
+      viewport={{
+        once: true,
+        amount: 0.35,
+        ...(scrollRoot ? { root: scrollRoot } : {}),
+      }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+export default function Footer({
+  id = "footer",
+  scrollRoot,
+  onBackToTop,
+}) {
   const [time, setTime] = useState("");
 
-  // Professional touch: Local time clock
   useEffect(() => {
     const timer = setInterval(() => {
       const now = new Date();
-      setTime(now.toLocaleTimeString("en-US", { 
-        hour12: false, 
-        hour: "2-digit", 
-        minute: "2-digit",
-        timeZone: "Asia/Kolkata" 
-      }));
+      setTime(
+        now.toLocaleTimeString("en-US", {
+          hour12: false,
+          hour: "2-digit",
+          minute: "2-digit",
+          timeZone: "Asia/Kolkata",
+        })
+      );
     }, 1000);
     return () => clearInterval(timer);
   }, []);
 
-  return (
-    <footer className="relative bg-[#0a0a0a] pt-24 pb-12 overflow-hidden selection:bg-[#FFD400] selection:text-black">
-      {/* Background Accent Gradient */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+  const handleBackToTop = () => {
+    if (scrollRoot?.current) {
+      scrollRoot.current.scrollTo({ top: 0, behavior: "smooth" });
+    }
 
-      <div className="mx-auto w-full max-w-[1440px] px-6 lg:px-12">
-        <div className="grid grid-cols-12 gap-y-16 lg:gap-y-0">
-          
-          {/* Big Brand Section */}
-          <div className="col-span-12 lg:col-span-6">
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={transition}
-              viewport={{ once: true }}
-            >
-              <span className="text-white/30 text-[10px] uppercase tracking-[0.5em] font-bold">Get in touch</span>
-              <h2 
-                className="text-white text-[clamp(40px,8vw,120px)] font-bold leading-[0.9] tracking-[-0.05em] mt-6"
+    if (onBackToTop) {
+      window.setTimeout(() => onBackToTop(), scrollRoot?.current ? 420 : 0);
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  return (
+    <footer
+      id={id}
+      className="relative w-full overflow-x-hidden bg-[#0a0a0a] pt-20 pb-16 selection:bg-[#FFD400] selection:text-black sm:pt-24 sm:pb-20"
+    >
+      <div className="absolute top-0 left-1/2 h-px w-full -translate-x-1/2 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+
+      <div className="mx-auto w-full max-w-[1440px] px-5 sm:px-6 lg:px-12">
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-y-0">
+          <div className="lg:col-span-6">
+            <Reveal scrollRoot={scrollRoot}>
+              <span className="text-[9px] font-bold uppercase tracking-[0.28em] text-white/30 sm:text-[10px] sm:tracking-[0.4em]">
+                Get in touch
+              </span>
+              <h2
+                className="mt-5 max-w-full text-[clamp(2rem,9.5vw,5.5rem)] font-bold leading-[0.95] tracking-[-0.04em] text-white sm:mt-6 lg:text-[clamp(2.75rem,6vw,7rem)]"
                 style={{ fontFamily: "'Syne', sans-serif" }}
               >
-                Let’s create <br /> something <span className="text-white/20 italic">iconic.</span>
+                Let&apos;s create{" "}
+                <span className="block sm:inline">
+                  something{" "}
+                  <span className="text-white/25 italic">iconic.</span>
+                </span>
               </h2>
-            </motion.div>
+            </Reveal>
           </div>
 
-          {/* Navigation/Info Section */}
-          <div className="col-span-12 lg:col-span-5 lg:col-start-8 grid grid-cols-2 gap-8">
-            {/* Socials */}
-            <div>
-              <p className="text-white/30 text-[10px] uppercase tracking-[0.3em] font-bold mb-8">Socials</p>
-              <ul className="space-y-4">
+          <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 sm:gap-8 lg:col-span-5 lg:col-start-8">
+            <Reveal scrollRoot={scrollRoot} delay={0.08}>
+              <p className="mb-5 text-[9px] font-bold uppercase tracking-[0.24em] text-white/30 sm:mb-6 sm:text-[10px] sm:tracking-[0.3em]">
+                Socials
+              </p>
+              <ul className="space-y-3 sm:space-y-4">
                 {socialLinks.map((link, i) => (
-                  <motion.li 
+                  <motion.li
                     key={link.name}
-                    initial={{ opacity: 0, x: -10 }}
+                    initial={{ opacity: 0, x: -12 }}
                     whileInView={{ opacity: 1, x: 0 }}
-                    transition={{ ...transition, delay: i * 0.1 }}
-                    viewport={{ once: true }}
+                    transition={{ duration: 0.7, delay: 0.12 + i * 0.07, ease }}
+                    viewport={{
+                      once: true,
+                      amount: 0.5,
+                      ...(scrollRoot ? { root: scrollRoot } : {}),
+                    }}
                   >
-                    <a 
+                    <a
                       href={link.url}
-                      className="group flex items-center gap-2 text-white/60 hover:text-white transition-colors font-syne text-lg"
+                      className="group flex items-center gap-2 text-base text-white/60 transition-colors hover:text-white sm:text-lg"
+                      style={{ fontFamily: "'Syne', sans-serif" }}
                     >
-                      <span className="w-0 group-hover:w-4 h-[1px] bg-white transition-all duration-300" />
+                      <span className="h-px w-0 bg-white transition-all duration-300 group-hover:w-4" />
                       {link.name}
                     </a>
                   </motion.li>
                 ))}
               </ul>
-            </div>
+            </Reveal>
 
-            {/* Availability / Time */}
-            <div className="flex flex-col justify-between">
-              <div>
-                <p className="text-white/30 text-[10px] uppercase tracking-[0.3em] font-bold mb-8">Location</p>
-                <div className="text-white/60 font-syne text-lg leading-snug">
-                  Aligarh, India <br />
-                  <span className="text-white/20 text-sm tracking-widest">{time} IST</span>
-                </div>
+            <Reveal scrollRoot={scrollRoot} delay={0.14}>
+              <p className="mb-5 text-[9px] font-bold uppercase tracking-[0.24em] text-white/30 sm:mb-6 sm:text-[10px] sm:tracking-[0.3em]">
+                Location
+              </p>
+              <div
+                className="text-base leading-snug text-white/60 sm:text-lg"
+                style={{ fontFamily: "'Syne', sans-serif" }}
+              >
+                Aligarh, India
+                <br />
+                <span className="text-sm tracking-widest text-white/25">{time} IST</span>
               </div>
 
-              <motion.div 
-                whileHover={{ scale: 1.05 }}
-                className="mt-12 lg:mt-0"
+              <motion.div
+                whileHover={{ scale: 1.03 }}
+                className="mt-8 sm:mt-10"
               >
-                <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full border border-white/10 bg-white/5">
-                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                  <span className="text-white/60 text-[11px] uppercase tracking-widest font-bold">Available for hire</span>
+                <div className="inline-flex max-w-full items-center gap-3 rounded-full border border-white/10 bg-white/5 px-4 py-2">
+                  <div className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-green-500" />
+                  <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/60 sm:text-[11px] sm:tracking-widest">
+                    Available for hire
+                  </span>
                 </div>
               </motion.div>
-            </div>
+            </Reveal>
           </div>
         </div>
 
-        {/* Massive Footer Signature */}
-        <div className="mt-32 lg:mt-48 relative border-t border-white/5 pt-12">
-          <motion.h1 
-            initial={{ opacity: 0.02 }}
-            whileInView={{ opacity: 0.05 }}
-            transition={{ duration: 2 }}
-            className="absolute -bottom-10 lg:-bottom-20 left-0 right-0 text-[20vw] font-black uppercase tracking-tighter select-none pointer-events-none text-white whitespace-nowrap"
+        <div className="relative mt-20 border-t border-white/5 pt-10 sm:mt-28 sm:pt-12 lg:mt-36">
+          <motion.p
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1.1, ease }}
+            viewport={{
+              once: true,
+              amount: 0.25,
+              ...(scrollRoot ? { root: scrollRoot } : {}),
+            }}
+            className="pointer-events-none mb-8 w-full text-center text-[clamp(2rem,11vw,6.5rem)] font-black uppercase leading-[0.9] tracking-[-0.03em] text-white/[0.06] sm:mb-10 sm:text-[clamp(2.5rem,14vw,9rem)]"
             style={{ fontFamily: "'Syne', sans-serif" }}
+            aria-hidden="true"
           >
-            SAMEER AFSAR
-          </motion.h1>
+            <span className="block uppercase">Sameer</span>
+            <span className="block uppercase">Shameem</span>
+          </motion.p>
 
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6 relative z-10">
-            <div className="flex gap-8 text-[10px] uppercase tracking-[0.2em] text-white/30">
-              <p>© 2026</p>
-              <p>Designed by me</p>
-            </div>
-            
-            <motion.button
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              className="group flex flex-col items-center gap-2"
-            >
-              <div className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center group-hover:bg-white group-hover:border-white transition-all duration-500">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="group-hover:text-black transition-colors transform rotate-180">
-                  <path d="M1 1L6 6L11 1" stroke="currentColor" strokeWidth="2" />
-                </svg>
+          <Reveal
+            scrollRoot={scrollRoot}
+            delay={0.05}
+            y={20}
+            className="relative z-10"
+          >
+            <div className="flex flex-col items-center justify-between gap-8 text-center md:flex-row md:gap-6 md:text-left">
+              <div className="flex flex-wrap justify-center gap-4 text-[9px] uppercase tracking-[0.18em] text-white/30 sm:gap-8 sm:text-[10px] sm:tracking-[0.2em] md:justify-start">
+                <p>© 2026</p>
+                <p>Designed by me</p>
               </div>
-              <span className="text-[9px] uppercase tracking-[0.3em] text-white/20 group-hover:text-white transition-colors">Back to top</span>
-            </motion.button>
 
-            <div className="text-[10px] uppercase tracking-[0.2em] text-white/30">
-              Personal Portfolio v2.0
+              <motion.button
+                type="button"
+                onClick={handleBackToTop}
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.97 }}
+                className="group flex flex-col items-center gap-2"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 transition-all duration-500 group-hover:border-white group-hover:bg-white">
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 12 12"
+                    fill="none"
+                    className="rotate-180 transform transition-colors group-hover:text-black"
+                  >
+                    <path
+                      d="M1 1L6 6L11 1"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    />
+                  </svg>
+                </div>
+                <span className="text-[9px] uppercase tracking-[0.28em] text-white/25 transition-colors group-hover:text-white">
+                  Back to top
+                </span>
+              </motion.button>
+
+              <div className="text-[9px] uppercase tracking-[0.18em] text-white/30 sm:text-[10px] sm:tracking-[0.2em]">
+                Personal Portfolio v2.0
+              </div>
             </div>
-          </div>
+          </Reveal>
         </div>
       </div>
     </footer>
   );
-} 
+}

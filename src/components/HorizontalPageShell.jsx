@@ -5,12 +5,14 @@ import Home from "../pages/Home";
 import ReelsSection from "../pages/ReelsSection";
 import PerformanceSection from "../pages/PerformanceSection";
 import ExperienceSection from "../pages/ExperienceSection";
+import Anime from "../pages/Anime";
 import { expertiseSections } from "../data/expertiseData";
 
 const PERFORMANCE_PANEL_INDEX = 2;
 const EXPERTISE_START_INDEX = 3;
 const EXPERIENCE_PANEL_INDEX = EXPERTISE_START_INDEX + expertiseSections.length;
-const PANEL_COUNT = EXPERIENCE_PANEL_INDEX + 1;
+const ANIME_PANEL_INDEX = EXPERIENCE_PANEL_INDEX + 1;
+const PANEL_COUNT = ANIME_PANEL_INDEX + 1;
 const PANEL_TRANSITION_MS = 560;
 
 export default function HorizontalPageShell() {
@@ -101,6 +103,15 @@ export default function HorizontalPageShell() {
           <ExperienceSection
             isActive={activePanel === EXPERIENCE_PANEL_INDEX}
             onReachStart={() => goToPanel(EXPERIENCE_PANEL_INDEX - 1)}
+            onReachEnd={() => goToPanel(ANIME_PANEL_INDEX)}
+          />
+        </div>
+
+        <div className="h-full w-screen shrink-0">
+          <Anime
+            isActive={activePanel === ANIME_PANEL_INDEX}
+            onReachStart={() => goToPanel(EXPERIENCE_PANEL_INDEX)}
+            onBackToTop={() => goToPanel(0)}
           />
         </div>
       </motion.div>

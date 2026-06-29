@@ -1,5 +1,6 @@
 import { useRef, useEffect } from "react";
-import { useInView } from "framer-motion";
+import Footer from "../components/Footer";
+import { usePanelScroll } from "../hooks/usePanelScroll";
 
 // Easing: cubic ease-in-out
 function easeInOutCubic(t) {
@@ -37,16 +38,11 @@ function WaterFillText({
         const eased = easeInOutCubic(t);
         const phase = elapsed * 0.003;
 
-        // Calculate wave offset
         const waveOffset = Math.sin(phase) * waveAmplitude * (1 - eased * 0.8);
+        const fillPercent = 100 - eased * 100;
 
-        // Fill from bottom to top (100% to 0%)
-        const fillPercent = 100 - (eased * 100);
-
-        // Apply clip-path with wave effect
         fillText.style.clipPath = `inset(${fillPercent - waveOffset}% 0 0 0)`;
 
-        // Reduce blur as animation progresses
         const blurAmount = 5 * (1 - eased);
         fillText.style.filter = `blur(${blurAmount}px)`;
 
@@ -66,9 +62,6 @@ function WaterFillText({
     };
   }, [trigger, delay]);
 
-  // Shared style for both layers — MUST stay identical between ghost and
-  // fill layers (aside from color/stroke) so the clip-path fill tracks the
-  // outline exactly, including when the text wraps on narrow screens.
   const sharedTextStyle = {
     fontFamily: "'Barlow Condensed', 'Arial Black', sans-serif",
     fontWeight: 900,
@@ -76,7 +69,7 @@ function WaterFillText({
     letterSpacing: "-0.01em",
     textTransform: "uppercase",
     lineHeight: 0.94,
-    whiteSpace: "normal", // allow wrapping instead of clipping on narrow screens
+    whiteSpace: "normal",
     wordBreak: "break-word",
     overflowWrap: "break-word",
   };
@@ -86,7 +79,6 @@ function WaterFillText({
       ref={containerRef}
       className={`relative inline-block w-full max-w-full text-center ${className}`}
     >
-      {/* Ghost / outline layer */}
       <span
         className="block w-full max-w-full select-none"
         style={{
@@ -98,7 +90,6 @@ function WaterFillText({
         {text}
       </span>
 
-      {/* Fill layer */}
       <span
         ref={fillTextRef}
         className="absolute top-0 left-0 block w-full max-w-full select-none pointer-events-none"
@@ -116,78 +107,84 @@ function WaterFillText({
   );
 }
 
-export default function WaterFillHero() {
-  const sectionRef = useRef(null);
-  const isInView = useInView(sectionRef, { once: true, margin: "-20% 0px" });
+export default function Anime({
+  isActive = true,
+  onReachStart,
+  onBackToTop,
+}) {
+  const scrollRef = usePanelScroll({ isActive, onReachStart });
 
   return (
     <section
       id="anime"
-      ref={sectionRef}
-      className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden px-4 py-20 sm:px-6 sm:py-24"
-      style={{ background: "#000000" }}
+      ref={scrollRef}
+      className="panel-scroll h-screen w-full overflow-y-auto overflow-x-hidden no-scrollbar"
+      style={{ touchAction: "pan-y" }}
     >
-      {/* Subtle top label */}
-      <p
-        className="mb-6 text-center sm:mb-10"
-        style={{
-          fontFamily: "sans-serif",
-          fontSize: "clamp(9px, 2.6vw, 11px)",
-          letterSpacing: "0.2em",
-          textTransform: "uppercase",
-          color: "rgba(255,255,255,0.3)",
-        }}
+      <div
+        className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden px-4 py-20 sm:px-6 sm:py-24"
+        style={{ background: "#000000" }}
       >
-        Content Creator
-      </p>
+        <p
+          className="mb-6 text-center sm:mb-10"
+          style={{
+            fontFamily: "sans-serif",
+            fontSize: "clamp(9px, 2.6vw, 11px)",
+            letterSpacing: "0.2em",
+            textTransform: "uppercase",
+            color: "rgba(255,255,255,0.3)",
+          }}
+        >
+          Content Creator
+        </p>
 
-      {/* Hero text */}
-      <div className="flex w-full max-w-[1180px] flex-col items-center gap-1 text-center px-2">
-        <WaterFillText
-          text="I CREATE VIRAL"
-          delay={0}
-          trigger={isInView}
-          // 8.5vw keeps "I CREATE VIRAL" (14 chars) from overflowing on
-          // phones as narrow as ~320px, while still capping at 120px on
-          // large screens. Lower min (28px) than before so very small
-          // phones never force a wrap mid-word.
-          fontSize="clamp(28px, 8.5vw, 120px)"
-        />
-        <WaterFillText
-          text="CONTENT"
-          delay={300}
-          trigger={isInView}
-          fontSize="clamp(28px, 8.5vw, 120px)"
+        <div className="flex w-full max-w-[1180px] flex-col items-center gap-1 px-2 text-center">
+          <WaterFillText
+            text="I CREATE CONTENT"
+            delay={0}
+            trigger={isActive}
+            fontSize="clamp(24px, 7.2vw, 110px)"
+          />
+          <WaterFillText
+            text="THAT SELL"
+            delay={300}
+            trigger={isActive}
+            fontSize="clamp(28px, 8.5vw, 120px)"
+          />
+        </div>
+
+        <p
+          className="mt-8 max-w-full text-center sm:mt-12"
+          style={{
+            fontFamily: "sans-serif",
+            fontSize: "clamp(9px, 2.6vw, 11px)",
+            letterSpacing: "0.2em",
+            textTransform: "uppercase",
+            color: "rgba(255,255,255,0.25)",
+          }}
+        >
+          Sameer · @thesameer06
+        </p>
+
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: "70%",
+            height: "40%",
+            background:
+              "radial-gradient(ellipse at center, rgba(255,255,255,0.04) 0%, transparent 70%)",
+            borderRadius: "50%",
+          }}
         />
       </div>
 
-      {/* Bottom sub-label */}
-      <p
-        className="mt-8 max-w-full text-center sm:mt-12"
-        style={{
-          fontFamily: "sans-serif",
-          fontSize: "clamp(9px, 2.6vw, 11px)",
-          letterSpacing: "0.2em",
-          textTransform: "uppercase",
-          color: "rgba(255,255,255,0.25)",
-        }}
-      >
-        Sameer · @thesameer06
-      </p>
-
-      {/* Soft ambient glow behind text — very subtle */}
-      <div
-        className="absolute pointer-events-none"
-        style={{
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          width: "70%",
-          height: "40%",
-          background:
-            "radial-gradient(ellipse at center, rgba(255,255,255,0.04) 0%, transparent 70%)",
-          borderRadius: "50%",
-        }}
+      <Footer
+        id="footer"
+        scrollRoot={scrollRef}
+        onBackToTop={onBackToTop}
       />
     </section>
   );

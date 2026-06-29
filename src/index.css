@@ -23,6 +23,14 @@ html.horizontal-shell-active body {
   display: none;
 }
 
+.panel-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  scroll-behavior: auto;
+  scroll-padding-top: 1rem;
+}
+
 .reel-track--snap {
   --reel-card-width: min(84vw, 320px);
   gap: clamp(1rem, 4vw, 2rem);
