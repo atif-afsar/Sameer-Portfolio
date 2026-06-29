@@ -65,7 +65,7 @@ export default function ExperienceSection({
           scale: counterScale,
           y: counterY,
         }}
-        className="absolute inset-0 z-20 flex items-center justify-center px-5 pt-14 sm:px-8 sm:pt-16"
+        className="absolute inset-0 z-20 flex items-center justify-center px-4 sm:px-6"
       >
         <MinimalExperienceCounter startDate={CAREER_START} />
       </motion.div>

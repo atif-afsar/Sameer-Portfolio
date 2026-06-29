@@ -51,31 +51,35 @@ export function useLiveExperience(startDate) {
   return useMemo(() => computeBreakdown(startDate, now), [startDate, now]);
 }
 
-const AnimatedValue = memo(function AnimatedValue({
-  value,
-  className = "",
-  accent = false,
-}) {
-  return (
-    <motion.span
-      key={value}
-      initial={{ opacity: 0.55, y: 4 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.22, ease: "easeOut" }}
-      className={`block tabular-nums leading-none ${accent ? "text-[#507eff]" : "text-[#111111]"} ${className}`}
-      style={{ fontFamily: "'Syne', sans-serif" }}
-    >
-      {pad(value)}
-    </motion.span>
-  );
-});
+const DATE_UNITS = [
+  { key: "years", label: "years" },
+  { key: "months", label: "months" },
+  { key: "days", label: "days" },
+];
 
-const DateUnit = memo(function DateUnit({ value, label, valueClass, labelClass = "" }) {
+const TIME_UNITS = [
+  { key: "hours", label: "hours" },
+  { key: "minutes", label: "minutes" },
+  { key: "seconds", label: "seconds", accent: true },
+];
+
+const UnitCell = memo(function UnitCell({ value, label, accent = false, large = false }) {
   return (
-    <div className="flex flex-col items-center gap-2.5 text-center sm:gap-3">
-      <AnimatedValue value={value} className={valueClass} />
+    <div className="flex flex-col items-center gap-1.5 sm:gap-2">
+      <motion.span
+        key={value}
+        initial={{ opacity: 0.6 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.2 }}
+        className={`tabular-nums font-semibold leading-none tracking-[-0.03em] ${
+          accent ? "text-[#507eff]" : "text-[#111111]"
+        } ${large ? "text-[clamp(2.25rem,8vw,3.5rem)]" : "text-[clamp(2rem,7vw,3rem)]"}`}
+        style={{ fontFamily: "'Syne', sans-serif" }}
+      >
+        {pad(value)}
+      </motion.span>
       <span
-        className={`text-[13px] font-medium leading-none text-black/68 sm:text-[14px] ${labelClass}`}
+        className="text-[14px] font-normal text-black/58 sm:text-[16px]"
         style={{ fontFamily: "'Outfit', sans-serif" }}
       >
         {label}
@@ -84,103 +88,48 @@ const DateUnit = memo(function DateUnit({ value, label, valueClass, labelClass =
   );
 });
 
-const ClockSegment = memo(function ClockSegment({ value, label, accent = false }) {
+const Dot = memo(function Dot() {
   return (
-    <div className="flex min-w-[4.5rem] flex-col items-center gap-2 sm:min-w-[5.5rem]">
-      <AnimatedValue
-        value={value}
-        accent={accent}
-        className="text-[clamp(1.75rem,6vw,2.75rem)] font-medium tracking-[-0.03em]"
-      />
-      <span
-        className="text-[12px] font-medium text-black/62 sm:text-[13px]"
-        style={{ fontFamily: "'Outfit', sans-serif" }}
-      >
-        {label}
-      </span>
-    </div>
+    <span className="pb-5 text-xl font-light text-black/20 sm:pb-6 sm:text-2xl" aria-hidden="true">
+      ·
+    </span>
   );
 });
+
+function UnitRow({ units, live, largeFirst = false }) {
+  return (
+    <div className="grid w-full grid-cols-[1fr_auto_1fr_auto_1fr] items-center justify-items-center gap-x-2 sm:gap-x-4">
+      {units.map((unit, index) => (
+        <div key={unit.key} className="contents">
+          {index > 0 && <Dot />}
+          <UnitCell
+            value={live[unit.key]}
+            label={unit.label}
+            accent={unit.accent}
+            large={largeFirst && index === 0}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export function MinimalExperienceCounter({ startDate }) {
   const live = useLiveExperience(startDate);
 
   return (
-    <div className="relative w-full max-w-[520px] px-1 sm:max-w-[560px]">
-      <div className="relative overflow-hidden rounded-[1.75rem] border border-white/75 bg-white/58 px-6 py-8 shadow-[0_24px_64px_rgba(0,0,0,0.09)] backdrop-blur-xl sm:rounded-[2rem] sm:px-10 sm:py-10">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.9),transparent_55%)]" />
-        <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-[rgba(80,126,255,0.1)] blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-14 -left-10 h-36 w-36 rounded-full bg-[rgba(245,168,62,0.12)] blur-3xl" />
+    <div className="w-full max-w-[min(94vw,600px)] px-2 text-center sm:max-w-[640px]">
+      <p
+        className="mb-7 text-[12px] font-medium uppercase tracking-[0.2em] text-black/42 sm:mb-8 sm:text-[14px]"
+        style={{ fontFamily: "'Outfit', sans-serif" }}
+      >
+        Experience in the craft
+      </p>
 
-        <div className="relative">
-          <div className="mb-7 flex items-center justify-center gap-2 sm:mb-8">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#507eff] opacity-40" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#507eff]" />
-            </span>
-            <span
-              className="text-[11px] font-medium uppercase tracking-[0.2em] text-black/50 sm:text-[12px]"
-              style={{ fontFamily: "'Outfit', sans-serif" }}
-            >
-              Live experience
-            </span>
-          </div>
-
-          {/* Years — hero */}
-          <div className="border-b border-black/[0.06] pb-7 text-center sm:pb-8">
-            <AnimatedValue
-              value={live.years}
-              className="text-[clamp(4rem,18vw,6.5rem)] font-semibold tracking-[-0.05em]"
-            />
-            <p
-              className="mt-3 text-[15px] font-medium text-black/70 sm:mt-4 sm:text-[16px]"
-              style={{ fontFamily: "'Outfit', sans-serif" }}
-            >
-              Years
-            </p>
-          </div>
-
-          {/* Months & Days */}
-          <div className="grid grid-cols-2 divide-x divide-black/[0.06] border-b border-black/[0.06] py-6 sm:py-7">
-            <DateUnit
-              value={live.months}
-              label="Months"
-              valueClass="text-[clamp(2.25rem,9vw,3.5rem)] font-medium tracking-[-0.04em]"
-            />
-            <DateUnit
-              value={live.days}
-              label="Days"
-              valueClass="text-[clamp(1.85rem,7vw,2.85rem)] font-medium tracking-[-0.03em]"
-            />
-          </div>
-
-          {/* Clock strip */}
-          <div className="pt-6 sm:pt-7">
-            <p
-              className="mb-4 text-center text-[11px] font-medium uppercase tracking-[0.18em] text-black/45 sm:mb-5 sm:text-[12px]"
-              style={{ fontFamily: "'Outfit', sans-serif" }}
-            >
-              Right now
-            </p>
-            <div className="flex items-start justify-center gap-1 sm:gap-2">
-              <ClockSegment value={live.hours} label="Hours" />
-              <span
-                className="mt-1 text-[clamp(1.5rem,5vw,2.25rem)] font-extralight leading-none text-black/20"
-                aria-hidden="true"
-              >
-                :
-              </span>
-              <ClockSegment value={live.minutes} label="Minutes" />
-              <span
-                className="mt-1 text-[clamp(1.5rem,5vw,2.25rem)] font-extralight leading-none text-black/20"
-                aria-hidden="true"
-              >
-                :
-              </span>
-              <ClockSegment value={live.seconds} label="Seconds" accent />
-            </div>
-          </div>
-        </div>
+      <div className="flex flex-col items-center gap-6 sm:gap-8">
+        <UnitRow units={DATE_UNITS} live={live} largeFirst />
+        <div className="h-px w-10 bg-black/10 sm:w-12" aria-hidden="true" />
+        <UnitRow units={TIME_UNITS} live={live} />
       </div>
     </div>
   );
