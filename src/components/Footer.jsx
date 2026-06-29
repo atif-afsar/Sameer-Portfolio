@@ -10,6 +10,33 @@ const socialLinks = [
 
 const ease = [0.16, 1, 0.3, 1];
 
+const thankYouMessage = "Thank you for visiting my portfolio";
+
+function ThankYouMarquee() {
+  const items = Array.from({ length: 6 }, () => thankYouMessage);
+
+  return (
+    <div
+      className="footer-thank-you-marquee relative w-full overflow-hidden bg-white"
+      aria-label={thankYouMessage}
+    >
+      <div className="footer-thank-you-marquee__fade footer-thank-you-marquee__fade--left" aria-hidden />
+      <div className="footer-thank-you-marquee__fade footer-thank-you-marquee__fade--right" aria-hidden />
+
+      <div className="footer-thank-you-marquee__track">
+        {[...items, ...items].map((text, index) => (
+          <span key={index} className="footer-thank-you-marquee__item">
+            {text}
+            <span className="footer-thank-you-marquee__separator" aria-hidden>
+              ✦
+            </span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Reveal({
   children,
   className = "",
@@ -155,7 +182,7 @@ export default function Footer({
         </div>
 
         <div className="relative mt-20 border-t border-white/5 pt-10 sm:mt-28 sm:pt-12 lg:mt-36">
-          <motion.p
+          <motion.div
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.1, ease }}
@@ -164,13 +191,17 @@ export default function Footer({
               amount: 0.25,
               ...(scrollRoot ? { root: scrollRoot } : {}),
             }}
-            className="pointer-events-none mb-8 w-full text-center text-[clamp(2rem,11vw,6.5rem)] font-black uppercase leading-[0.9] tracking-[-0.03em] text-white/[0.06] sm:mb-10 sm:text-[clamp(2.5rem,14vw,9rem)]"
-            style={{ fontFamily: "'Syne', sans-serif" }}
+            className="footer-signature pointer-events-none mb-6 w-full sm:mb-8"
             aria-hidden="true"
           >
-            <span className="block uppercase">Sameer</span>
-            <span className="block uppercase">Shameem</span>
-          </motion.p>
+            <p
+              className="footer-signature__name flex w-full max-w-full flex-col items-center gap-0.5 text-center font-black uppercase text-white/[0.06] sm:gap-1"
+              style={{ fontFamily: "'Syne', sans-serif" }}
+            >
+              <span className="footer-signature__line">Sameer</span>
+              <span className="footer-signature__line">Shameem</span>
+            </p>
+          </motion.div>
 
           <Reveal
             scrollRoot={scrollRoot}
@@ -178,8 +209,8 @@ export default function Footer({
             y={20}
             className="relative z-10"
           >
-            <div className="flex flex-col items-center justify-between gap-8 text-center md:flex-row md:gap-6 md:text-left">
-              <div className="flex flex-wrap justify-center gap-4 text-[9px] uppercase tracking-[0.18em] text-white/30 sm:gap-8 sm:text-[10px] sm:tracking-[0.2em] md:justify-start">
+            <div className="flex flex-col items-center justify-between gap-6 text-center sm:gap-8 lg:flex-row lg:gap-6 lg:text-left">
+              <div className="flex w-full max-w-full flex-wrap justify-center gap-x-4 gap-y-2 text-[9px] uppercase tracking-[0.16em] text-white/30 sm:gap-x-8 sm:text-[10px] sm:tracking-[0.2em] lg:w-auto lg:justify-start">
                 <p>© 2026</p>
                 <p>Designed by me</p>
               </div>
@@ -211,12 +242,29 @@ export default function Footer({
                 </span>
               </motion.button>
 
-              <div className="text-[9px] uppercase tracking-[0.18em] text-white/30 sm:text-[10px] sm:tracking-[0.2em]">
+              <div className="w-full max-w-full text-center text-[9px] uppercase tracking-[0.16em] text-white/30 sm:text-[10px] sm:tracking-[0.2em] lg:w-auto lg:text-right">
                 Personal Portfolio v2.0
               </div>
             </div>
           </Reveal>
         </div>
+      </div>
+
+      <ThankYouMarquee />
+
+      <div className="footer-credit border-t border-black/10 bg-white px-4 py-3.5 text-center sm:py-4">
+        <p className="text-[11px] leading-relaxed text-[#333333] sm:text-[12px]">
+          Website by{" "}
+          <a
+            href="https://portfolio-rgzt.vercel.app/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-[#0a0a0a] underline decoration-[#0a0a0a]/30 underline-offset-[3px] transition-colors hover:text-black hover:decoration-black"
+            style={{ fontFamily: "'Syne', sans-serif" }}
+          >
+            Atif Afsar
+          </a>
+        </p>
       </div>
     </footer>
   );

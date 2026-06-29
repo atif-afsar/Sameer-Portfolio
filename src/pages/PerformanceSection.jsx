@@ -1,5 +1,5 @@
 import { useMemo, useRef } from "react";
-import { motion, useTransform } from "framer-motion";
+import { motion, useInView, useTransform } from "framer-motion";
 import MetricCounter from "../components/MetricCounter";
 import {
   // performanceHero,
@@ -98,55 +98,64 @@ function FloatingBubbles({ opacity }) {
 // }
 
 function PerformanceMetricsPanel() {
+  const panelRef = useRef(null);
+  const isPanelActive = useInView(panelRef, { once: true, amount: 0.35 });
   const heroStat = performanceStats.find((s) => s.highlight) ?? performanceStats[0];
   const gridStats = performanceStats.filter((s) => !s.highlight);
 
   return (
-    <div className="performance-metrics-panel w-full max-w-[min(94vw,680px)] px-3 sm:px-4">
-      <div className="relative overflow-hidden rounded-[1.75rem] border border-white/75 bg-white/62 px-6 py-8 shadow-[0_28px_70px_rgba(0,0,0,0.1)] backdrop-blur-xl sm:rounded-[2rem] sm:px-9 sm:py-10">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.9),transparent_55%)]" />
+    <div
+      ref={panelRef}
+      className="performance-metrics-panel w-full max-w-[min(96vw,760px)]"
+    >
+      <div className="relative rounded-[1.5rem] border border-white/75 bg-white/70 px-4 py-5 shadow-[0_28px_70px_rgba(0,0,0,0.1)] backdrop-blur-xl sm:rounded-[1.85rem] sm:px-7 sm:py-7 lg:rounded-[2rem] lg:px-9 lg:py-8">
+        <div className="pointer-events-none absolute inset-0 rounded-[inherit] bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.92),transparent_55%)]" />
         <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-[rgba(245,168,62,0.14)] blur-3xl" />
 
         <div className="relative text-center">
-          <span className="inline-flex items-center rounded-full border border-black/10 bg-white/80 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-[#3d3d3d]">
+          <span className="inline-flex items-center rounded-full border border-black/10 bg-white/85 px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.24em] text-[#3d3d3d] sm:px-4 sm:py-1.5 sm:text-[10px] sm:tracking-[0.28em]">
             Campaign impact
           </span>
 
           <p
-            className="mt-6 text-[clamp(3rem,14vw,5.5rem)] font-semibold leading-none tracking-[-0.05em] text-[#111111]"
+            className="mt-4 text-[clamp(2.5rem,12vw,4.75rem)] font-semibold leading-none tracking-[-0.05em] text-[#111111] sm:mt-5 lg:text-[clamp(3rem,8vw,5.25rem)]"
             style={{ fontFamily: "'Syne', sans-serif" }}
           >
-            <MetricCounter value={heroStat.value} />
+            <MetricCounter value={heroStat.value} active={isPanelActive} />
           </p>
-          <p className="mt-2 text-[13px] font-medium uppercase tracking-[0.22em] text-black/50 sm:text-[14px]">
+          <p className="mt-1.5 text-[11px] font-medium uppercase tracking-[0.18em] text-black/50 sm:mt-2 sm:text-[13px] sm:tracking-[0.22em]">
             {heroStat.label}
           </p>
         </div>
 
-        <div className="relative mt-8 grid grid-cols-2 gap-3 sm:mt-10 sm:gap-4">
-          {gridStats.map((stat) => (
+        <div className="relative mt-5 grid grid-cols-2 gap-2 sm:mt-7 sm:grid-cols-6 sm:gap-3 lg:mt-8">
+          {gridStats.map((stat, index) => (
             <div
               key={stat.label}
-              className="rounded-xl border border-black/[0.05] bg-white/70 px-4 py-4 shadow-sm sm:px-5 sm:py-5"
+              className={`rounded-xl border border-black/[0.06] bg-white/80 px-3 py-3 shadow-sm sm:rounded-2xl sm:px-4 sm:py-4 lg:px-5 lg:py-4 ${
+                index === gridStats.length - 1 && gridStats.length % 2 !== 0
+                  ? "col-span-2"
+                  : "col-span-1"
+              } sm:col-span-2 ${index === 3 ? "sm:col-start-2" : ""}`}
             >
-              <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-black/50 sm:text-[10px]">
+              <p className="text-[8px] font-semibold uppercase leading-tight tracking-[0.14em] text-black/50 sm:text-[9px] sm:tracking-[0.16em] lg:text-[10px]">
                 {stat.label}
               </p>
               <p
-                className="mt-2 text-[1.35rem] font-medium leading-none tracking-[-0.02em] text-black sm:text-[1.55rem]"
+                className="mt-1.5 text-[clamp(1.1rem,4.5vw,1.45rem)] font-semibold leading-none tracking-[-0.03em] text-black sm:mt-2 lg:text-[1.55rem]"
                 style={{ fontFamily: "'Syne', sans-serif" }}
               >
-                <MetricCounter value={stat.value} />
+                <MetricCounter value={stat.value} active={isPanelActive} />
               </p>
             </div>
           ))}
         </div>
 
-        <ul className="relative mt-8 flex flex-wrap justify-center gap-2 border-t border-black/[0.06] pt-6 sm:mt-9">
+        <ul className="relative mt-5 flex flex-wrap justify-center gap-1.5 border-t border-black/[0.06] pt-4 sm:mt-6 sm:gap-2 sm:pt-5 lg:mt-7">
           {performanceHighlights.map((item) => (
             <li
               key={item}
-              className="rounded-full border border-black/8 bg-black/[0.03] px-3 py-1.5 text-[10px] font-medium text-black/55 sm:text-[11px]"
+              className="max-w-full rounded-full border border-black/8 bg-black/[0.03] px-2.5 py-1 text-center text-[9px] font-medium leading-snug text-black/55 sm:px-3 sm:py-1.5 sm:text-[10px] lg:text-[11px]"
             >
               {item}
             </li>
@@ -232,7 +241,7 @@ export default function PerformanceSection({
           scale: metricsScale,
           y: metricsY,
         }}
-        className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center px-4 pt-14 sm:pt-16"
+        className="performance-metrics-stage absolute inset-0 z-30 flex items-start justify-center overflow-x-hidden overflow-y-auto px-3 pb-8 pt-[4.75rem] sm:px-5 sm:pb-10 sm:pt-[5.25rem] lg:items-center lg:overflow-y-hidden lg:pb-12 lg:pt-16"
       >
         <PerformanceMetricsPanel />
 

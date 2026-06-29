@@ -22,9 +22,10 @@ function formatMetric({ prefix, numeric, suffix, decimals }) {
   return `${prefix}${formatted}${suffix}`;
 }
 
-export default function MetricCounter({ value, className, style }) {
+export default function MetricCounter({ value, className, style, active }) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, amount: 0.6 });
+  const isInView = useInView(ref, { once: true, amount: 0.35 });
+  const shouldAnimate = active ?? isInView;
   const parsed = parseMetricValue(value);
 
   const motionValue = useMotionValue(0);
@@ -34,10 +35,10 @@ export default function MetricCounter({ value, className, style }) {
   });
 
   useEffect(() => {
-    if (isInView) {
+    if (shouldAnimate) {
       motionValue.set(parsed.numeric);
     }
-  }, [isInView, motionValue, parsed.numeric]);
+  }, [shouldAnimate, motionValue, parsed.numeric]);
 
   useEffect(() => {
     const unsubscribe = springValue.on("change", (latest) => {

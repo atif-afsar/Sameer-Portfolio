@@ -8,7 +8,7 @@ export const performanceHero = {
 };
 
 export const performanceStats = [
-  { label: "Total Ad Spend", value: "1.5Cr", highlight: true },
+  { label: "Total Ad Spend", value: "1.1Cr", highlight: true },
   { label: "Average ROAS", value: "5.4x" },
   { label: "Conversions", value: "18.2K+" },
   { label: "Cost Per Lead", value: "-42%" },

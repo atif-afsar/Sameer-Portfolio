@@ -9,12 +9,31 @@ import Gallery from './pages/Gallery'
 import Contact from './pages/Contact'
 import ParallaxDemo from './pages/ParallaxDemo'
 
+const LOADER_SEEN_KEY = 'sameer-portfolio-loader-seen'
+
+function hasSeenLoader() {
+  try {
+    return localStorage.getItem(LOADER_SEEN_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
 const App = () => {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !hasSeenLoader())
+
+  const handleLoaderComplete = () => {
+    try {
+      localStorage.setItem(LOADER_SEEN_KEY, '1')
+    } catch {
+      // Ignore storage errors (private mode, etc.)
+    }
+    setLoading(false)
+  }
 
   return (
     <>
-      {loading && <Loader onComplete={() => setLoading(false)} />}
+      {loading && <Loader onComplete={handleLoaderComplete} />}
       
       {!loading && (
         <>

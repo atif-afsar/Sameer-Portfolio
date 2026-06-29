@@ -36,7 +36,6 @@ const Loader = ({ onComplete }) => {
         autoPlay
         muted
         playsInline
-        loop
         className="absolute inset-0 w-full h-full object-cover"
       >
         <source src="/videos/IMG_4136.MOV" type="video/mp4" />

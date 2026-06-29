@@ -1,5 +1,5 @@
 import { memo, useMemo, useRef } from "react";
-import { motion, useTransform } from "framer-motion";
+import { motion, useInView, useTransform } from "framer-motion";
 import MetricCounter from "./MetricCounter";
 import {
   useMeasureSnapTrack,
@@ -76,72 +76,95 @@ function FloatingBubbles({ opacity }) {
 }
 
 const ExpertiseCard = memo(function ExpertiseCard({ card, index }) {
+  const cardRef = useRef(null);
+  const isCardActive = useInView(cardRef, { once: true, amount: 0.45 });
+
   return (
     <motion.article
-      initial={{ opacity: 0, y: 20 }}
+      ref={cardRef}
+      initial={{ opacity: 0, y: 28 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.35 }}
+      viewport={{ once: true, amount: 0.3 }}
       transition={{
-        duration: 0.55,
+        duration: 0.6,
         delay: index * 0.04,
         ease: [0.22, 1, 0.36, 1],
       }}
-      className="expertise-track-card group relative shrink-0 overflow-hidden rounded-[1.5rem] border border-black/[0.06] bg-white/90 p-5 shadow-[0_20px_48px_rgba(0,0,0,0.08)] backdrop-blur-sm sm:rounded-[1.65rem] sm:p-6 lg:p-7"
+      className="expertise-track-card group relative flex shrink-0 flex-col overflow-hidden rounded-[1.35rem] border border-black/[0.07] bg-white shadow-[0_24px_60px_rgba(0,0,0,0.09)] transition-[transform,box-shadow] duration-500 hover:-translate-y-1 hover:shadow-[0_32px_72px_rgba(0,0,0,0.12)] sm:rounded-[1.65rem] lg:rounded-[1.75rem]"
     >
       <div
-        className="pointer-events-none absolute inset-0 opacity-80"
+        className="pointer-events-none absolute inset-x-0 top-0 h-[3px]"
         style={{
-          background: `radial-gradient(circle at 88% 12%, ${card.accent}, transparent 42%)`,
+          background: `linear-gradient(90deg, transparent, ${card.accent}, transparent)`,
         }}
       />
 
-      <div className="relative flex items-start justify-between gap-3">
-        <span className="rounded-full border border-black/10 bg-black/[0.03] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.22em] text-black/55">
-          {card.tag}
-        </span>
-        <span className="text-[11px] font-semibold tabular-nums text-black/30">
-          {String(index + 1).padStart(2, "0")}
-        </span>
-      </div>
+      <div
+        className="pointer-events-none absolute inset-0 opacity-90"
+        style={{
+          background: `radial-gradient(circle at 100% 0%, ${card.accent}, transparent 48%), radial-gradient(circle at 0% 100%, rgba(255,255,255,0.85), transparent 55%)`,
+        }}
+      />
 
-      <div className="relative mt-4 flex items-center gap-3">
-        <div className="flex h-[60px] w-[60px] shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#f3f1ea] ring-1 ring-black/[0.05] sm:h-[68px] sm:w-[68px]">
-          <img
-            src={card.image}
-            alt=""
-            className="h-full w-full object-cover"
-            draggable="false"
-          />
-        </div>
-        <h3
-          className="min-w-0 flex-1 text-[1.25rem] font-medium leading-tight tracking-[-0.02em] text-black sm:text-[1.45rem] lg:text-[1.55rem]"
-          style={{ fontFamily: "'Syne', sans-serif" }}
-        >
-          {card.title}
-        </h3>
-      </div>
-
-      <p className="relative mt-4 text-[13px] leading-[1.65] text-black/62 sm:text-[14px] lg:text-[15px]">
-        {card.description}
-      </p>
-
-      <div className="relative mt-5 grid grid-cols-2 gap-2.5 border-t border-black/[0.06] pt-5 sm:gap-3">
-        {card.metrics.map((metric) => (
-          <div
-            key={metric.label}
-            className="rounded-xl bg-black/[0.03] px-3.5 py-3 ring-1 ring-black/[0.04] sm:px-4"
+      <div className="relative flex flex-1 flex-col p-4 sm:p-5 lg:p-6">
+        <div className="flex items-start justify-between gap-3">
+          <span className="inline-flex max-w-[75%] items-center rounded-full border border-black/10 bg-white/80 px-2.5 py-1 text-[8px] font-bold uppercase tracking-[0.18em] text-black/55 backdrop-blur-sm sm:px-3 sm:text-[9px] sm:tracking-[0.22em]">
+            {card.tag}
+          </span>
+          <span
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-[10px] font-semibold tabular-nums text-black/35 ring-1 ring-black/[0.06] sm:h-8 sm:w-8 sm:text-[11px]"
+            aria-hidden="true"
           >
-            <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-black/50">
-              {metric.label}
-            </p>
-            <p
-              className="mt-1.5 text-[1.15rem] font-medium leading-none tracking-[-0.02em] text-black sm:text-[1.3rem]"
-              style={{ fontFamily: "'Syne', sans-serif" }}
-            >
-              <MetricCounter value={metric.value} />
-            </p>
+            {String(index + 1).padStart(2, "0")}
+          </span>
+        </div>
+
+        <div className="relative mt-4 flex items-center gap-3.5 sm:mt-5 sm:gap-4">
+          <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-[#f4f2eb] ring-1 ring-black/[0.06] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] sm:h-16 sm:w-16 lg:h-[72px] lg:w-[72px]">
+            <img
+              src={card.image}
+              alt=""
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              draggable="false"
+            />
           </div>
-        ))}
+          <h3
+            className="min-w-0 flex-1 text-[1.15rem] font-semibold leading-[1.08] tracking-[-0.03em] text-[#111111] sm:text-[1.35rem] lg:text-[1.5rem]"
+            style={{ fontFamily: "'Syne', sans-serif" }}
+          >
+            {card.title}
+          </h3>
+        </div>
+
+        <p className="relative mt-3.5 line-clamp-3 text-[12.5px] leading-[1.65] text-black/58 sm:mt-4 sm:line-clamp-none sm:text-[13.5px] lg:text-[14.5px] lg:leading-[1.7]">
+          {card.description}
+        </p>
+
+        <div className="relative mt-auto grid grid-cols-2 gap-2 pt-4 sm:gap-2.5 sm:pt-5 lg:gap-3 lg:pt-6">
+          {card.metrics.map((metric, metricIndex) => (
+            <div
+              key={metric.label}
+              className={`expertise-metric-tile rounded-xl px-3 py-3 sm:rounded-2xl sm:px-3.5 sm:py-3.5 lg:px-4 lg:py-4 ${
+                metricIndex === 0 ? "expertise-metric-tile--primary" : ""
+              }`}
+              style={{
+                background: metricIndex === 0
+                  ? `linear-gradient(145deg, ${card.accent}, rgba(255,255,255,0.55))`
+                  : "rgba(0,0,0,0.03)",
+              }}
+            >
+              <p className="text-[8px] font-bold uppercase leading-tight tracking-[0.14em] text-black/48 sm:text-[9px] sm:tracking-[0.16em]">
+                {metric.label}
+              </p>
+              <p
+                className="expertise-metric-value mt-1.5 text-[clamp(1.15rem,4.8vw,1.65rem)] font-semibold leading-none tracking-[-0.04em] text-[#111111] sm:mt-2 sm:text-[clamp(1.25rem,3.2vw,1.85rem)] lg:text-[1.95rem]"
+                style={{ fontFamily: "'Syne', sans-serif" }}
+              >
+                <MetricCounter value={metric.value} active={isCardActive} />
+              </p>
+            </div>
+          ))}
+        </div>
       </div>
     </motion.article>
   );
