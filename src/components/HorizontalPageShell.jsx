@@ -3,10 +3,13 @@ import { motion, useSpring, useTransform } from "framer-motion";
 import ExpertiseSection from "./ExpertiseSection";
 import Home from "../pages/Home";
 import ReelsSection from "../pages/ReelsSection";
+import PerformanceSection from "../pages/PerformanceSection";
 import ExperienceSection from "../pages/ExperienceSection";
 import { expertiseSections } from "../data/expertiseData";
 
-const EXPERIENCE_PANEL_INDEX = 2 + expertiseSections.length;
+const PERFORMANCE_PANEL_INDEX = 2;
+const EXPERTISE_START_INDEX = 3;
+const EXPERIENCE_PANEL_INDEX = EXPERTISE_START_INDEX + expertiseSections.length;
 const PANEL_COUNT = EXPERIENCE_PANEL_INDEX + 1;
 const PANEL_TRANSITION_MS = 560;
 
@@ -48,7 +51,7 @@ export default function HorizontalPageShell() {
     };
   }, []);
 
-  const expertiseStartIndex = 2;
+  const expertiseStartIndex = EXPERTISE_START_INDEX;
 
   return (
     <div className="fixed inset-0 z-0 overflow-hidden bg-[#f7f5ef]">
@@ -67,7 +70,15 @@ export default function HorizontalPageShell() {
           <ReelsSection
             isActive={activePanel === 1}
             onReachStart={() => goToPanel(0)}
-            onReachEnd={() => goToPanel(2)}
+            onReachEnd={() => goToPanel(PERFORMANCE_PANEL_INDEX)}
+          />
+        </div>
+
+        <div className="h-full w-screen shrink-0">
+          <PerformanceSection
+            isActive={activePanel === PERFORMANCE_PANEL_INDEX}
+            onReachStart={() => goToPanel(1)}
+            onReachEnd={() => goToPanel(EXPERTISE_START_INDEX)}
           />
         </div>
 

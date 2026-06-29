@@ -88,6 +88,14 @@ html.horizontal-shell-active body {
   background: #0a0a0a;
 }
 
+.performance-metrics-panel {
+  z-index: 25;
+}
+
+.performance-hero-card {
+  transform-origin: center center;
+}
+
 .digital-cards-scroll {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;

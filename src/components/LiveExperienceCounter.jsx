@@ -1,5 +1,5 @@
-import { memo, useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
+import { Fragment, memo, useEffect, useMemo, useRef, useState } from "react";
+import { motion, useInView, useMotionValue, useSpring } from "framer-motion";
 
 function computeBreakdown(from, to) {
   let years = to.getFullYear() - from.getFullYear();
@@ -35,7 +35,7 @@ function computeBreakdown(from, to) {
 }
 
 function pad(value) {
-  return String(value).padStart(2, "0");
+  return String(Math.round(value)).padStart(2, "0");
 }
 
 export function useLiveExperience(startDate) {
@@ -52,65 +52,158 @@ export function useLiveExperience(startDate) {
 }
 
 const DATE_UNITS = [
-  { key: "years", label: "years" },
-  { key: "months", label: "months" },
-  { key: "days", label: "days" },
+  {
+    key: "years",
+    label: "years",
+    valueClass: "text-[clamp(6rem,30vw,14rem)] font-semibold",
+    labelClass: "text-[18px] sm:text-[24px]",
+    colClass: "min-w-[clamp(5.5rem,28vw,12rem)]",
+  },
+  {
+    key: "months",
+    label: "months",
+    valueClass: "text-[clamp(3.5rem,16vw,7.5rem)] font-semibold",
+    labelClass: "text-[16px] sm:text-[22px]",
+    colClass: "min-w-[clamp(3.5rem,16vw,7rem)]",
+  },
+  {
+    key: "days",
+    label: "days",
+    valueClass: "text-[clamp(2.75rem,12vw,5.5rem)] font-medium",
+    labelClass: "text-[15px] sm:text-[20px]",
+    colClass: "min-w-[clamp(3rem,14vw,5.5rem)]",
+  },
 ];
 
 const TIME_UNITS = [
-  { key: "hours", label: "hours" },
-  { key: "minutes", label: "minutes" },
-  { key: "seconds", label: "seconds", accent: true },
+  {
+    key: "hours",
+    label: "hours",
+    colClass: "min-w-[clamp(3rem,12vw,5.5rem)]",
+  },
+  {
+    key: "minutes",
+    label: "minutes",
+    colClass: "min-w-[clamp(3rem,12vw,5.5rem)]",
+  },
+  {
+    key: "seconds",
+    label: "seconds",
+    colClass: "min-w-[clamp(3rem,12vw,5.5rem)]",
+    accent: true,
+  },
 ];
 
-const UnitCell = memo(function UnitCell({ value, label, accent = false, large = false }) {
+const TIME_VALUE_CLASS = "text-[clamp(2.75rem,11vw,5.25rem)] font-medium";
+const TIME_LABEL_CLASS = "text-[15px] sm:text-[20px]";
+
+const AnimatedDigit = memo(function AnimatedDigit({
+  value,
+  className,
+  accent = false,
+  animateOnView = true,
+}) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, amount: 0.35 });
+  const motionValue = useMotionValue(0);
+  const springValue = useSpring(motionValue, {
+    damping: 42,
+    stiffness: 85,
+    mass: 0.6,
+  });
+
+  useEffect(() => {
+    if (!animateOnView || isInView) {
+      motionValue.set(value);
+    }
+  }, [animateOnView, isInView, motionValue, value]);
+
+  useEffect(() => {
+    const unsubscribe = springValue.on("change", (latest) => {
+      if (!ref.current) return;
+      ref.current.textContent = pad(latest);
+    });
+
+    return unsubscribe;
+  }, [springValue]);
+
   return (
-    <div className="flex flex-col items-center gap-1.5 sm:gap-2">
-      <motion.span
-        key={value}
-        initial={{ opacity: 0.6 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.2 }}
-        className={`tabular-nums font-semibold leading-none tracking-[-0.03em] ${
-          accent ? "text-[#507eff]" : "text-[#111111]"
-        } ${large ? "text-[clamp(2.25rem,8vw,3.5rem)]" : "text-[clamp(2rem,7vw,3rem)]"}`}
-        style={{ fontFamily: "'Syne', sans-serif" }}
-      >
-        {pad(value)}
-      </motion.span>
+    <span
+      ref={ref}
+      className={`inline-block tabular-nums leading-none tracking-[-0.03em] ${
+        accent ? "text-[#507eff]" : "text-[#111111]"
+      } ${className}`}
+      style={{ fontFamily: "'Syne', sans-serif" }}
+    >
+      00
+    </span>
+  );
+});
+
+const Dot = memo(function Dot() {
+  return (
+    <span
+      className="self-baseline px-0.5 text-[clamp(1.5rem,5vw,2.5rem)] font-light leading-none text-black/18 sm:px-1"
+      aria-hidden="true"
+    >
+      ·
+    </span>
+  );
+});
+
+function UnitBlock({ value, label, valueClass, labelClass, colClass, accent = false }) {
+  return (
+    <div className={`flex flex-col items-center gap-2 sm:gap-2.5 ${colClass}`}>
+      <AnimatedDigit value={value} className={valueClass} accent={accent} />
       <span
-        className="text-[14px] font-normal text-black/58 sm:text-[16px]"
+        className={`text-center font-normal text-black/58 ${labelClass}`}
         style={{ fontFamily: "'Outfit', sans-serif" }}
       >
         {label}
       </span>
     </div>
   );
-});
+}
 
-const Dot = memo(function Dot() {
+function MetricRow({ units, live, getValueClass, getLabelClass }) {
   return (
-    <span className="pb-5 text-xl font-light text-black/20 sm:pb-6 sm:text-2xl" aria-hidden="true">
-      ·
-    </span>
-  );
-});
-
-function UnitRow({ units, live, largeFirst = false }) {
-  return (
-    <div className="grid w-full grid-cols-[1fr_auto_1fr_auto_1fr] items-center justify-items-center gap-x-2 sm:gap-x-4">
+    <div className="flex items-baseline justify-center gap-x-1 sm:gap-x-2">
       {units.map((unit, index) => (
-        <div key={unit.key} className="contents">
+        <Fragment key={unit.key}>
           {index > 0 && <Dot />}
-          <UnitCell
+          <UnitBlock
             value={live[unit.key]}
             label={unit.label}
+            valueClass={getValueClass(unit)}
+            labelClass={getLabelClass(unit)}
+            colClass={unit.colClass}
             accent={unit.accent}
-            large={largeFirst && index === 0}
           />
-        </div>
+        </Fragment>
       ))}
     </div>
+  );
+}
+
+function DateRow({ live }) {
+  return (
+    <MetricRow
+      units={DATE_UNITS}
+      live={live}
+      getValueClass={(unit) => unit.valueClass}
+      getLabelClass={(unit) => unit.labelClass}
+    />
+  );
+}
+
+function TimeRow({ live }) {
+  return (
+    <MetricRow
+      units={TIME_UNITS}
+      live={live}
+      getValueClass={() => TIME_VALUE_CLASS}
+      getLabelClass={() => TIME_LABEL_CLASS}
+    />
   );
 }
 
@@ -118,18 +211,31 @@ export function MinimalExperienceCounter({ startDate }) {
   const live = useLiveExperience(startDate);
 
   return (
-    <div className="w-full max-w-[min(94vw,600px)] px-2 text-center sm:max-w-[640px]">
-      <p
-        className="mb-7 text-[12px] font-medium uppercase tracking-[0.2em] text-black/42 sm:mb-8 sm:text-[14px]"
-        style={{ fontFamily: "'Outfit', sans-serif" }}
+    <div className="w-full max-w-[min(100vw,1100px)] px-1 text-center sm:px-2">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        className="mb-10 inline-flex items-center justify-center sm:mb-12"
       >
-        Experience in the craft
-      </p>
+        <span className="relative inline-flex items-center gap-2.5 overflow-hidden rounded-full border border-[#507eff]/25 bg-white/75 px-5 py-2.5 shadow-[0_8px_28px_rgba(80,126,255,0.12)] backdrop-blur-sm sm:gap-3 sm:px-7 sm:py-3">
+          <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(80,126,255,0.14),transparent_65%)]" />
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#507eff] opacity-50" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-[#507eff]" />
+          </span>
+          <span
+            className="relative text-[13px] font-semibold uppercase tracking-[0.22em] text-[#1a1a1a] sm:text-[15px]"
+            style={{ fontFamily: "'Outfit', sans-serif" }}
+          >
+            Experience in the craft
+          </span>
+        </span>
+      </motion.div>
 
-      <div className="flex flex-col items-center gap-6 sm:gap-8">
-        <UnitRow units={DATE_UNITS} live={live} largeFirst />
-        <div className="h-px w-10 bg-black/10 sm:w-12" aria-hidden="true" />
-        <UnitRow units={TIME_UNITS} live={live} />
+      <div className="flex flex-col items-center gap-10 sm:gap-12">
+        <DateRow live={live} />
+        <TimeRow live={live} />
       </div>
     </div>
   );
