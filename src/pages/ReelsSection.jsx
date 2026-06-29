@@ -8,37 +8,16 @@ import {
 } from "../hooks/useSectionScroll";
 
 const reels = [
+  { id: "reel-2", title: "Reel 02", videoSrc: "/videos/Video-70.mp4" },
+  { id: "reel-3", title: "Reel 03", videoSrc: "/videos/Video-513.mp4" },
+  { id: "reel-4", title: "Reel 04", videoSrc: "/videos/Video-976.mp4" },
+  { id: "reel-5", title: "Reel 05", videoSrc: "/videos/e6cf69b4-0c14-46ad-8416-674ea5906a7e.mp4" },
+  { id: "reel-1", title: "Reel 01", videoSrc: "/videos/Video-9.mp4" },
+
   {
-    id: "reel-1",
-    title: "Reel 01",
-    instagramUrl: "https://www.instagram.com/reel/DDG_aewyA_0/",
-  },
-  {
-    id: "reel-2",
-    title: "Reel 02",
-    instagramUrl: "https://www.instagram.com/reel/DVDUMz5jyFu/",
-  },
-  {
-    id: "reel-3",
-    title: "Reel 03",
-    instagramUrl: "https://www.instagram.com/reel/DVIxcX_jw8g/",
-  },
-  {
-    id: "reel-4",
-    title: "Reel 04",
-    instagramUrl: "https://www.instagram.com/reel/DRl03kgkTku/",
-  },
-  {
-    id: "reel-5",
-    title: "Reel 05",
-    instagramUrl: "https://www.instagram.com/reel/DRTyKglkXLo/",
-  },
-  {
-    id: "album-1",
-    title: "Shared Album",
-    type: "external",
-    externalUrl: "https://photos.app.goo.gl/JYj1iePJpriQtyPGA",
-    label: "Google Photos",
+    id: "reel-8",
+    title: "Reel 08",
+    videoSrc: "/videos/copy_CC2B8722-8D54-4847-A68E-F9B082ABF3F8.mov",
   },
 ];
 
@@ -111,44 +90,34 @@ function FloatingBubbles({ opacity }) {
   );
 }
 
-function getReelShortcode(url) {
-  const match = url.match(/instagram\.com\/(?:reel|reels|p)\/([^/?#]+)/i);
-  return match?.[1] ?? null;
-}
-
 const ReelCard = memo(function ReelCard({ reel }) {
   const cardRef = useRef(null);
   const videoRef = useRef(null);
   const [isVisible, setIsVisible] = useState(false);
-  const [loadEmbed, setLoadEmbed] = useState(false);
-  const isExternal = reel.type === "external";
-  const shortcode = reel.instagramUrl ? getReelShortcode(reel.instagramUrl) : null;
-  const useNativeVideo = Boolean(reel.videoSrc);
+  const [shouldLoad, setShouldLoad] = useState(false);
 
   useEffect(() => {
-    if (isExternal) return undefined;
-
     const card = cardRef.current;
     if (!card) return undefined;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        const visible = entry.isIntersecting && entry.intersectionRatio >= 0.4;
+        const visible = entry.isIntersecting && entry.intersectionRatio >= 0.35;
         setIsVisible(visible);
         if (entry.isIntersecting) {
-          setLoadEmbed(true);
+          setShouldLoad(true);
         }
       },
-      { threshold: [0, 0.4], rootMargin: "60px" }
+      { threshold: [0, 0.35, 0.6], rootMargin: "80px" }
     );
 
     observer.observe(card);
     return () => observer.disconnect();
-  }, [isExternal]);
+  }, []);
 
   useEffect(() => {
     const video = videoRef.current;
-    if (!video || !useNativeVideo) return undefined;
+    if (!video) return undefined;
 
     if (isVisible) {
       video.play().catch(() => {});
@@ -157,67 +126,34 @@ const ReelCard = memo(function ReelCard({ reel }) {
     }
 
     return undefined;
-  }, [isVisible, useNativeVideo]);
-
-  const footerLabel = isExternal ? reel.label : "Instagram Reel";
+  }, [isVisible]);
 
   return (
     <article ref={cardRef} className="reel-card shrink-0 snap-start">
       <div className="reel-card-inner">
-        {isExternal ? (
-          <a
-            href={reel.externalUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex h-full w-full flex-col items-center justify-center gap-4 bg-[#151515] px-5 text-center transition hover:bg-[#1a1a1a]"
-          >
-            <div className="absolute inset-0 bg-[linear-gradient(145deg,rgba(255,255,255,0.06)_0%,transparent_42%,rgba(0,0,0,0.18)_100%)]" />
-            <span className="relative flex h-14 w-14 items-center justify-center rounded-full border border-white/12 bg-white/[0.04]">
-              <svg viewBox="0 0 24 24" className="h-6 w-6 fill-white/75" aria-hidden="true">
-                <path d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14l-4-2.5L12 19l-4-2.5L4 19V5z" />
-              </svg>
-            </span>
-            <p className="relative text-[10px] font-semibold uppercase tracking-[0.28em] text-white/45">
-              Open album
-            </p>
-          </a>
-        ) : useNativeVideo ? (
+        {shouldLoad ? (
           <video
             ref={videoRef}
-            className="h-full w-full object-cover"
+            className="reel-card-video"
             src={reel.videoSrc}
-            poster={reel.poster}
             muted
             loop
             playsInline
-            preload="none"
-          />
-        ) : loadEmbed && shortcode ? (
-          <iframe
-            title={reel.title}
-            src={`https://www.instagram.com/reel/${shortcode}/embed/`}
-            className="pointer-events-none h-full w-full border-0 bg-black"
-            loading="lazy"
-            allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-            referrerPolicy="strict-origin-when-cross-origin"
+            preload="metadata"
           />
         ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-[#151515] px-4">
-            <div className="absolute inset-0 bg-[linear-gradient(145deg,rgba(255,255,255,0.06)_0%,transparent_42%,rgba(0,0,0,0.18)_100%)]" />
-            <span className="relative flex h-14 w-14 items-center justify-center rounded-full border border-white/12 bg-white/[0.04]">
-              <svg viewBox="0 0 24 24" className="ml-1 h-6 w-6 fill-white/75" aria-hidden="true">
+          <div className="flex h-full w-full items-center justify-center bg-[#101010]">
+            <span className="flex h-12 w-12 items-center justify-center rounded-full border border-white/12 bg-white/[0.04]">
+              <svg viewBox="0 0 24 24" className="ml-1 h-5 w-5 fill-white/70" aria-hidden="true">
                 <path d="M8 5v14l11-7z" />
               </svg>
             </span>
-            <p className="relative text-[10px] font-semibold uppercase tracking-[0.28em] text-white/40">
-              Loading reel
-            </p>
           </div>
         )}
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-linear-to-t from-black/70 via-black/20 to-transparent px-4 pb-4 pt-14">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-linear-to-t from-black/75 via-black/25 to-transparent px-4 pb-4 pt-12">
           <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/50">
-            {footerLabel}
+            Video reel
           </p>
           <p className="mt-1 text-sm font-medium text-white">{reel.title}</p>
         </div>
@@ -262,7 +198,6 @@ export default function ReelsSection({ isActive = true, onReachStart, onReachEnd
     >
       {homeBackground}
 
-      {/* Phase 2 — horizontal reel track */}
       <motion.div
         style={{ opacity: trackLayerOpacity }}
         className="absolute inset-0 z-20 flex items-center pt-14 sm:pt-16"
@@ -293,7 +228,6 @@ export default function ReelsSection({ isActive = true, onReachStart, onReachEnd
         </motion.p>
       </motion.div>
 
-      {/* Phase 1 — bubbles + centered heading intro */}
       <motion.div
         style={{ visibility: introLayerVisibility }}
         className="pointer-events-none absolute inset-0 z-30"
@@ -316,7 +250,7 @@ export default function ReelsSection({ isActive = true, onReachStart, onReachEnd
 
               <div className="relative text-center">
                 <span className="inline-flex items-center rounded-full border border-black/10 bg-white/80 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.32em] text-[#3d3d3d] shadow-sm">
-                  Instagram Reels
+                  Video Reels
                 </span>
 
                 <h2
@@ -335,7 +269,7 @@ export default function ReelsSection({ isActive = true, onReachStart, onReachEnd
                 <div className="mx-auto mt-6 h-px w-14 bg-linear-to-r from-transparent via-black/20 to-transparent" />
 
                 <p className="mx-auto mt-6 max-w-[380px] text-[14px] font-medium leading-[1.7] tracking-[0.01em] text-[#2a2a2a] sm:text-[15px]">
-                  Scroll through short-form work, campaign clips, and a shared album.
+                  Scroll through short-form campaign clips and brand reels.
                 </p>
               </div>
             </div>
