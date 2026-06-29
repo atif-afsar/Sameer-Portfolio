@@ -146,7 +146,7 @@ export default function Anime({
             fontSize="clamp(24px, 7.2vw, 110px)"
           />
           <WaterFillText
-            text="THAT SELL"
+            text="THAT CONVERT"
             delay={300}
             trigger={isActive}
             fontSize="clamp(28px, 8.5vw, 120px)"

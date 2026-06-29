@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { memo, useEffect, useRef } from "react";
 import { useInView, useMotionValue, useSpring } from "framer-motion";
 
 function parseMetricValue(value) {
@@ -22,7 +22,7 @@ function formatMetric({ prefix, numeric, suffix, decimals }) {
   return `${prefix}${formatted}${suffix}`;
 }
 
-export default function MetricCounter({ value, className, style, active }) {
+export default memo(function MetricCounter({ value, className, style, active }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.35 });
   const shouldAnimate = active ?? isInView;
@@ -67,4 +67,4 @@ export default function MetricCounter({ value, className, style, active }) {
       {initialDisplay}
     </span>
   );
-}
+});

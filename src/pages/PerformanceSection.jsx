@@ -2,7 +2,6 @@ import { useMemo, useRef } from "react";
 import { motion, useInView, useTransform } from "framer-motion";
 import MetricCounter from "../components/MetricCounter";
 import {
-  // performanceHero,
   performanceHighlights,
   performanceStats,
 } from "../data/performanceData";
@@ -16,7 +15,7 @@ const panelBackground = (
   </>
 );
 
-function FloatingBubbles({ opacity }) {
+function FloatingBubbles({ opacity, active = true }) {
   const bubbles = useMemo(
     () =>
       Array.from({ length: 12 }, (_, index) => ({
@@ -46,7 +45,7 @@ function FloatingBubbles({ opacity }) {
             left: bubble.left,
             top: bubble.top,
           }}
-          animate={{ y: [0, -12, 0], opacity: [0.22, 0.4, 0.22] }}
+          animate={active ? { y: [0, -12, 0], opacity: [0.22, 0.4, 0.22] } : undefined}
           transition={{
             duration: bubble.duration,
             repeat: Infinity,
@@ -58,44 +57,6 @@ function FloatingBubbles({ opacity }) {
     </motion.div>
   );
 }
-
-// function PerformanceHeroCard() {
-//   const card = performanceHero;
-
-//   return (
-//     <article className="performance-hero-card expertise-track-card relative w-full max-w-[min(92vw,420px)] overflow-hidden rounded-[1.5rem] border border-black/[0.06] bg-white/90 p-5 shadow-[0_24px_56px_rgba(0,0,0,0.1)] backdrop-blur-sm sm:rounded-[1.65rem] sm:p-6 lg:max-w-[440px] lg:p-7">
-//       <div
-//         className="pointer-events-none absolute inset-0 opacity-85"
-//         style={{
-//           background: `radial-gradient(circle at 88% 12%, ${card.accent}, transparent 42%)`,
-//         }}
-//       />
-
-//       <div className="relative flex items-start justify-between gap-3">
-//         <span className="rounded-full border border-black/10 bg-black/[0.03] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.22em] text-black/55">
-//           {card.tag}
-//         </span>
-//         <span className="text-[11px] font-semibold tabular-nums text-black/30">01</span>
-//       </div>
-
-//       <div className="relative mt-4 flex items-center gap-3">
-//         <div className="flex h-[60px] w-[60px] shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#f3f1ea] ring-1 ring-black/[0.05] sm:h-[68px] sm:w-[68px]">
-//           <img src={card.image} alt="" className="h-full w-full object-cover" draggable="false" />
-//         </div>
-//         <h3
-//           className="min-w-0 flex-1 text-[1.25rem] font-medium leading-tight tracking-[-0.02em] text-black sm:text-[1.45rem]"
-//           style={{ fontFamily: "'Syne', sans-serif" }}
-//         >
-//           {card.title}
-//         </h3>
-//       </div>
-
-//       <p className="relative mt-4 text-[13px] leading-[1.65] text-black/62 sm:text-[14px]">
-//         {card.description}
-//       </p>
-//     </article>
-//   );
-// }
 
 function PerformanceMetricsPanel() {
   const panelRef = useRef(null);
@@ -222,9 +183,7 @@ export default function PerformanceSection({
             filter: cardFilter,
           }}
           className="flex w-full justify-center will-change-transform"
-        >
-          {/* <PerformanceHeroCard /> */}
-        </motion.div>
+        />
 
         <motion.p
           style={{ opacity: cardHintOpacity }}
@@ -258,7 +217,7 @@ export default function PerformanceSection({
         style={{ visibility: introLayerVisibility }}
         className="pointer-events-none absolute inset-0 z-30"
       >
-        <FloatingBubbles opacity={bubbleOpacity} />
+        <FloatingBubbles opacity={bubbleOpacity} active={isActive} />
 
         <div className="flex h-full items-center justify-center px-5 pt-14 sm:px-8 sm:pt-16">
           <motion.div

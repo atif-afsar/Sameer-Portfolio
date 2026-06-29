@@ -112,16 +112,6 @@ html.horizontal-shell-active body {
   }
 }
 
-.performance-hero-card {
-  transform-origin: center center;
-}
-
-.digital-cards-scroll {
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
-  touch-action: pan-y;
-}
-
 .expertise-track {
   will-change: transform;
   transform: translate3d(0, 0, 0);

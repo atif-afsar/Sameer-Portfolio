@@ -37,7 +37,7 @@ const bubblePalette = [
   "rgba(245,168,62,0.1)",
 ];
 
-function FloatingBubbles({ opacity }) {
+function FloatingBubbles({ opacity, active = true }) {
   const bubbles = useMemo(
     () =>
       Array.from({ length: 16 }, (_, index) => ({
@@ -72,12 +72,16 @@ function FloatingBubbles({ opacity }) {
             background: bubble.color,
           }}
           initial={{ scale: 0.6, opacity: 0 }}
-          animate={{
-            scale: [0.85, 1.05, 0.92, 1.02, 0.88],
-            opacity: [0.28, 0.48, 0.32, 0.42, 0.3],
-            x: [0, bubble.driftX, -bubble.driftX * 0.4, bubble.driftX * 0.6, 0],
-            y: [0, bubble.driftY, bubble.driftY * 0.35, bubble.driftY * 0.7, 0],
-          }}
+          animate={
+            active
+              ? {
+                  scale: [0.85, 1.05, 0.92, 1.02, 0.88],
+                  opacity: [0.28, 0.48, 0.32, 0.42, 0.3],
+                  x: [0, bubble.driftX, -bubble.driftX * 0.4, bubble.driftX * 0.6, 0],
+                  y: [0, bubble.driftY, bubble.driftY * 0.35, bubble.driftY * 0.7, 0],
+                }
+              : undefined
+          }
           transition={{
             duration: bubble.duration,
             repeat: Infinity,
@@ -232,7 +236,7 @@ export default function ReelsSection({ isActive = true, onReachStart, onReachEnd
         style={{ visibility: introLayerVisibility }}
         className="pointer-events-none absolute inset-0 z-30"
       >
-        <FloatingBubbles opacity={bubbleOpacity} />
+        <FloatingBubbles opacity={bubbleOpacity} active={isActive} />
 
         <div className="flex h-full items-center justify-center px-5 pt-14 sm:px-8 sm:pt-16">
           <motion.div

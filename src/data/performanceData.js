@@ -1,12 +1,3 @@
-export const performanceHero = {
-  tag: "Optimization",
-  title: "Performance Marketing",
-  description:
-    "Funnel testing, budget allocation, and conversion-focused growth loops built to scale profitably.",
-  image: "/images/performance.jpeg",
-  accent: "rgba(245,168,62,0.22)",
-};
-
 export const performanceStats = [
   { label: "Total Ad Spend", value: "1.1Cr", highlight: true },
   { label: "Average ROAS", value: "5.4x" },

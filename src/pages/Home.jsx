@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 
 const imageSources = [
@@ -166,6 +166,8 @@ function FlipCard({ src, index, target }) {
             alt={`Portfolio visual ${index + 1}`}
             className="h-full w-full object-cover transition duration-500"
             draggable="false"
+            decoding="async"
+            loading={index < 6 ? "eager" : "lazy"}
           />
         </div>
 
@@ -184,6 +186,18 @@ function FlipCard({ src, index, target }) {
     </motion.div>
   );
 }
+
+const MemoFlipCard = memo(
+  FlipCard,
+  (prev, next) =>
+    prev.src === next.src &&
+    prev.index === next.index &&
+    prev.target.x === next.target.x &&
+    prev.target.y === next.target.y &&
+    prev.target.rotation === next.target.rotation &&
+    prev.target.scale === next.target.scale &&
+    prev.target.opacity === next.target.opacity
+);
 
 export default function Home({ isActive = true, onReachEnd }) {
   const [introPhase, setIntroPhase] = useState("scatter");
@@ -271,6 +285,8 @@ export default function Home({ isActive = true, onReachEnd }) {
   }, []);
 
   useEffect(() => {
+    if (!isActive) return undefined;
+
     const typeSpeed = 75;
     const deleteSpeed = 42;
     const pauseTime = 850;
@@ -295,7 +311,7 @@ export default function Home({ isActive = true, onReachEnd }) {
     }, isDeleting ? deleteSpeed : displayText === activeRole ? pauseTime : typeSpeed);
 
     return () => window.clearTimeout(timer);
-  }, [activeRole, displayText, isDeleting]);
+  }, [activeRole, displayText, isActive, isDeleting]);
 
   useEffect(() => {
     const element = containerRef.current;
@@ -407,37 +423,143 @@ export default function Home({ isActive = true, onReachEnd }) {
 
   useEffect(() => {
     const element = containerRef.current;
-    if (!element) return undefined;
+    if (!element || !isActive) return undefined;
+
+    let rafId = null;
+    let latestNormalizedX = 0;
 
     const handleMouseMove = (event) => {
       const rect = element.getBoundingClientRect();
-      const normalizedX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      latestNormalizedX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
 
-      mouseX.set(normalizedX * 88);
+      if (rafId) return;
+
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        mouseX.set(latestNormalizedX * 88);
+      });
     };
 
     const handleMouseLeave = () => mouseX.set(0);
 
-    element.addEventListener("mousemove", handleMouseMove);
-    element.addEventListener("mouseleave", handleMouseLeave);
+    element.addEventListener("mousemove", handleMouseMove, { passive: true });
+    element.addEventListener("mouseleave", handleMouseLeave, { passive: true });
 
     return () => {
+      if (rafId) cancelAnimationFrame(rafId);
       element.removeEventListener("mousemove", handleMouseMove);
       element.removeEventListener("mouseleave", handleMouseLeave);
     };
-  }, [mouseX]);
+  }, [isActive, mouseX]);
 
   useEffect(() => {
-    const unsubscribeMorph = smoothMorph.on("change", setMorphValue);
-    const unsubscribeRotate = smoothScrollRotate.on("change", setRotateValue);
-    const unsubscribeParallax = smoothMouseX.on("change", setParallaxValue);
+    if (!isActive) return undefined;
+
+    let rafId = null;
+    let latestMorph = morphValue;
+    let latestRotate = rotateValue;
+    let latestParallax = parallaxValue;
+
+    const flush = () => {
+      rafId = null;
+      setMorphValue(latestMorph);
+      setRotateValue(latestRotate);
+      setParallaxValue(latestParallax);
+    };
+
+    const scheduleFlush = () => {
+      if (!rafId) {
+        rafId = requestAnimationFrame(flush);
+      }
+    };
+
+    const unsubscribeMorph = smoothMorph.on("change", (value) => {
+      latestMorph = value;
+      scheduleFlush();
+    });
+    const unsubscribeRotate = smoothScrollRotate.on("change", (value) => {
+      latestRotate = value;
+      scheduleFlush();
+    });
+    const unsubscribeParallax = smoothMouseX.on("change", (value) => {
+      latestParallax = value;
+      scheduleFlush();
+    });
 
     return () => {
+      if (rafId) cancelAnimationFrame(rafId);
       unsubscribeMorph();
       unsubscribeRotate();
       unsubscribeParallax();
     };
-  }, [smoothMorph, smoothMouseX, smoothScrollRotate]);
+  }, [isActive, smoothMorph, smoothMouseX, smoothScrollRotate]);
+
+  const cardTargets = useMemo(() => {
+    return imageSources.map((_, index) => {
+      if (introPhase === "scatter") {
+        return scatterPositions[index];
+      }
+
+      if (introPhase === "line") {
+        const lineSpacing = containerSize.width < 640 ? 48 : 68;
+        const lineTotalWidth = totalImages * lineSpacing;
+        const lineX = index * lineSpacing - lineTotalWidth / 2;
+
+        return {
+          x: lineX,
+          y: containerSize.width < 640 ? 24 : 0,
+          rotation: 0,
+          scale: 1,
+          opacity: 1,
+        };
+      }
+
+      const isMobile = orbitTextBounds.isMobile;
+      const circleRadius = orbitTextBounds.circleRadius;
+      const circleAngle = (index / totalImages) * 360;
+      const circleRad = (circleAngle * Math.PI) / 180;
+      const circlePos = {
+        x: Math.cos(circleRad) * circleRadius,
+        y: Math.sin(circleRad) * circleRadius + (isMobile ? 16 : 26),
+        rotation: circleAngle + 90,
+      };
+      const arcRadius =
+        Math.min(containerSize.width || 1, (containerSize.height || 1) * 1.45) *
+        (isMobile ? 1.5 : 1.12);
+      const arcApexY = (containerSize.height || 1) * (isMobile ? 0.45 : 0.34);
+      const arcCenterY = arcApexY + arcRadius;
+      const spreadAngle = isMobile ? 106 : 138;
+      const startAngle = -90 - spreadAngle / 2;
+      const step = spreadAngle / (totalImages - 1);
+      const scrollProgress = Math.min(Math.max(rotateValue / 360, 0), 1);
+      const boundedRotation = -scrollProgress * spreadAngle * 0.78;
+      const currentArcAngle = startAngle + index * step + boundedRotation;
+      const arcRad = (currentArcAngle * Math.PI) / 180;
+      const arcPos = {
+        x: Math.cos(arcRad) * arcRadius + parallaxValue,
+        y: Math.sin(arcRad) * arcRadius + arcCenterY,
+        rotation: currentArcAngle + 90,
+        scale: isMobile ? 1.26 : 1.62,
+      };
+
+      return {
+        x: lerp(circlePos.x, arcPos.x, morphValue),
+        y: lerp(circlePos.y, arcPos.y, morphValue),
+        rotation: lerp(circlePos.rotation, arcPos.rotation, morphValue),
+        scale: lerp(1, arcPos.scale, morphValue),
+        opacity: 1,
+      };
+    });
+  }, [
+    introPhase,
+    containerSize.width,
+    containerSize.height,
+    morphValue,
+    rotateValue,
+    parallaxValue,
+    orbitTextBounds,
+    scatterPositions,
+  ]);
 
   return (
     <section
@@ -513,63 +635,14 @@ export default function Home({ isActive = true, onReachEnd }) {
 
       <div className="relative z-10 flex h-screen w-full items-center justify-center px-4 pt-20 sm:px-6 lg:px-10">
         <div className="relative flex h-screen w-full max-w-[1320px] items-center justify-center">
-          {imageSources.map((src, index) => {
-            let target = { x: 0, y: 0, rotation: 0, scale: 1, opacity: 1 };
-
-            if (introPhase === "scatter") {
-              target = scatterPositions[index];
-            } else if (introPhase === "line") {
-              const lineSpacing = containerSize.width < 640 ? 48 : 68;
-              const lineTotalWidth = totalImages * lineSpacing;
-              const lineX = index * lineSpacing - lineTotalWidth / 2;
-
-              target = {
-                x: lineX,
-                y: containerSize.width < 640 ? 24 : 0,
-                rotation: 0,
-                scale: 1,
-                opacity: 1,
-              };
-            } else {
-              const isMobile = orbitTextBounds.isMobile;
-              const circleRadius = orbitTextBounds.circleRadius;
-              const circleAngle = (index / totalImages) * 360;
-              const circleRad = (circleAngle * Math.PI) / 180;
-              const circlePos = {
-                x: Math.cos(circleRad) * circleRadius,
-                y: Math.sin(circleRad) * circleRadius + (isMobile ? 16 : 26),
-                rotation: circleAngle + 90,
-              };
-              const arcRadius =
-                Math.min(containerSize.width || 1, (containerSize.height || 1) * 1.45) *
-                (isMobile ? 1.5 : 1.12);
-              const arcApexY = (containerSize.height || 1) * (isMobile ? 0.45 : 0.34);
-              const arcCenterY = arcApexY + arcRadius;
-              const spreadAngle = isMobile ? 106 : 138;
-              const startAngle = -90 - spreadAngle / 2;
-              const step = spreadAngle / (totalImages - 1);
-              const scrollProgress = Math.min(Math.max(rotateValue / 360, 0), 1);
-              const boundedRotation = -scrollProgress * spreadAngle * 0.78;
-              const currentArcAngle = startAngle + index * step + boundedRotation;
-              const arcRad = (currentArcAngle * Math.PI) / 180;
-              const arcPos = {
-                x: Math.cos(arcRad) * arcRadius + parallaxValue,
-                y: Math.sin(arcRad) * arcRadius + arcCenterY,
-                rotation: currentArcAngle + 90,
-                scale: isMobile ? 1.26 : 1.62,
-              };
-
-              target = {
-                x: lerp(circlePos.x, arcPos.x, morphValue),
-                y: lerp(circlePos.y, arcPos.y, morphValue),
-                rotation: lerp(circlePos.rotation, arcPos.rotation, morphValue),
-                scale: lerp(1, arcPos.scale, morphValue),
-                opacity: 1,
-              };
-            }
-
-            return <FlipCard key={`${src}-${index}`} src={src} index={index} target={target} />;
-          })}
+          {imageSources.map((src, index) => (
+            <MemoFlipCard
+              key={`${src}-${index}`}
+              src={src}
+              index={index}
+              target={cardTargets[index]}
+            />
+          ))}
         </div>
       </div>
 

@@ -90,10 +90,14 @@ export default function ExperienceSection({
                 left: bubble.left,
                 top: bubble.top,
               }}
-              animate={{
-                y: [0, -14, 0],
-                opacity: [0.2, 0.38, 0.2],
-              }}
+              animate={
+                isActive
+                  ? {
+                      y: [0, -14, 0],
+                      opacity: [0.2, 0.38, 0.2],
+                    }
+                  : undefined
+              }
               transition={{
                 duration: bubble.duration,
                 repeat: Infinity,

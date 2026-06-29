@@ -2,6 +2,7 @@ import { memo, useMemo, useRef } from "react";
 import { motion, useInView, useTransform } from "framer-motion";
 import MetricCounter from "./MetricCounter";
 import {
+  INTRO_PHASE_END,
   useMeasureSnapTrack,
   useSectionScroll,
   useSnapTrackMotion,
@@ -23,7 +24,7 @@ const bubblePalette = [
   "rgba(245,168,62,0.1)",
 ];
 
-function FloatingBubbles({ opacity }) {
+function FloatingBubbles({ opacity, active = true }) {
   const bubbles = useMemo(
     () =>
       Array.from({ length: 14 }, (_, index) => ({
@@ -57,12 +58,16 @@ function FloatingBubbles({ opacity }) {
             top: bubble.top,
             background: bubble.color,
           }}
-          animate={{
-            scale: [0.85, 1.04, 0.9, 1.02, 0.88],
-            opacity: [0.28, 0.46, 0.3, 0.4, 0.28],
-            x: [0, bubble.driftX, -bubble.driftX * 0.4, bubble.driftX * 0.5, 0],
-            y: [0, bubble.driftY, bubble.driftY * 0.35, bubble.driftY * 0.65, 0],
-          }}
+          animate={
+            active
+              ? {
+                  scale: [0.85, 1.04, 0.9, 1.02, 0.88],
+                  opacity: [0.28, 0.46, 0.3, 0.4, 0.28],
+                  x: [0, bubble.driftX, -bubble.driftX * 0.4, bubble.driftX * 0.5, 0],
+                  y: [0, bubble.driftY, bubble.driftY * 0.35, bubble.driftY * 0.65, 0],
+                }
+              : undefined
+          }
           transition={{
             duration: bubble.duration,
             repeat: Infinity,
@@ -126,6 +131,8 @@ const ExpertiseCard = memo(function ExpertiseCard({ card, index }) {
               alt=""
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
               draggable="false"
+              decoding="async"
+              loading="lazy"
             />
           </div>
           <h3
@@ -187,9 +194,14 @@ export default function ExpertiseSection({
 
   const {
     sectionRef,
+    smoothProgress,
     introProgress,
     trackProgress,
   } = useSectionScroll({ isActive, onReachStart, onReachEnd });
+
+  const introLayerVisibility = useTransform(smoothProgress, (value) =>
+    value > INTRO_PHASE_END + 0.02 ? "hidden" : "visible"
+  );
 
   const snapRef = useMeasureSnapTrack(trackRef, trackViewportRef, ".expertise-track-card", cards.length);
   const { trackLayerOpacity, trackX, browseHintOpacity } = useSnapTrackMotion(
@@ -239,8 +251,11 @@ export default function ExpertiseSection({
         </motion.p>
       </motion.div>
 
-      <div className="pointer-events-none absolute inset-0 z-30">
-        <FloatingBubbles opacity={bubbleOpacity} />
+      <motion.div
+        style={{ visibility: introLayerVisibility }}
+        className="pointer-events-none absolute inset-0 z-30"
+      >
+        <FloatingBubbles opacity={bubbleOpacity} active={isActive} />
 
         <div className="flex h-full items-center justify-center px-5 pt-14 sm:px-8 sm:pt-16">
           <motion.div
@@ -290,7 +305,7 @@ export default function ExpertiseSection({
         >
           Scroll to begin
         </motion.p>
-      </div>
+      </motion.div>
     </section>
   );
 }

@@ -52,6 +52,8 @@ export function useSectionScroll({
     const element = sectionRef.current;
     if (!element || !isActive) return undefined;
 
+    const inputConfig = getInputConfig();
+
     const triggerBoundary = (direction) => {
       if (boundaryCooldownRef.current) return;
 
@@ -78,7 +80,7 @@ export function useSectionScroll({
     const applyScroll = (deltaY) => {
       if (!deltaY) return false;
 
-      const { scrollMultiplier, maxScrollStep } = getInputConfig();
+      const { scrollMultiplier, maxScrollStep } = inputConfig;
       const scrollingDown = deltaY > 0;
       const scrollingUp = deltaY < 0;
       const atMax = progressRef.current >= 0.996;
@@ -125,7 +127,7 @@ export function useSectionScroll({
     const handleTouchMove = (event) => {
       if (!touchTracking || event.touches.length !== 1) return;
 
-      const { touchMultiplier } = getInputConfig();
+      const { touchMultiplier } = inputConfig;
       const currentY = event.touches[0].clientY;
       const deltaY = (touchStartY - currentY) * touchMultiplier;
       touchStartY = currentY;
@@ -202,24 +204,6 @@ function interpolateSnapOffsets(offsets, scrollPortion) {
   return offsets[lowerIndex] + (offsets[upperIndex] - offsets[lowerIndex]) * t;
 }
 
-export function useHorizontalTrackMotion(trackProgress, trackRangeRef) {
-  const trackLayerOpacity = useTransform(trackProgress, [0, 0.2, 0.38, 1], [0, 0, 1, 1]);
-  const trackEnterX = useTransform(trackProgress, [0, 0.22, 1], [88, 12, 0]);
-  const trackScrollX = useTransform(trackProgress, (value) => {
-    const enterEnd = 0.22;
-    const { start, end } = trackRangeRef.current;
-
-    if (value <= enterEnd) return start;
-
-    const scrollPortion = (value - enterEnd) / (1 - enterEnd);
-    return start + (end - start) * scrollPortion;
-  });
-  const trackX = useTransform([trackEnterX, trackScrollX], ([enter, scroll]) => enter + scroll);
-  const browseHintOpacity = useTransform(trackProgress, [0.24, 0.4, 0.88, 1], [0, 1, 0.5, 0]);
-
-  return { trackLayerOpacity, trackX, browseHintOpacity };
-}
-
 export function useSnapTrackMotion(trackProgress, snapRef, { enterEnd = 0.2 } = {}) {
   const trackLayerOpacity = useTransform(trackProgress, [0, 0.18, 0.32, 1], [0, 0, 1, 1]);
   const trackEnterX = useTransform(trackProgress, [0, enterEnd, 1], [72, 0, 0]);
@@ -236,43 +220,6 @@ export function useSnapTrackMotion(trackProgress, snapRef, { enterEnd = 0.2 } = 
   const browseHintOpacity = useTransform(trackProgress, [0.22, 0.38, 0.9, 1], [0, 1, 0.55, 0]);
 
   return { trackLayerOpacity, trackX, browseHintOpacity };
-}
-
-export function useMeasureHorizontalTrack(trackRef, viewportRef, remeasureKey = 0) {
-  const trackRangeRef = useRef({ start: 0, end: 0 });
-
-  useEffect(() => {
-    const measureTrack = () => {
-      const track = trackRef.current;
-      const viewport = viewportRef.current;
-      if (!track || !viewport) return;
-
-      const overflow = track.scrollWidth - viewport.clientWidth + 24;
-      trackRangeRef.current = { start: 0, end: overflow > 0 ? -overflow : 0 };
-    };
-
-    measureTrack();
-
-    const observer = typeof ResizeObserver !== "undefined"
-      ? new ResizeObserver(measureTrack)
-      : null;
-
-    if (observer && trackRef.current) {
-      observer.observe(trackRef.current);
-    }
-    if (observer && viewportRef.current) {
-      observer.observe(viewportRef.current);
-    }
-
-    window.addEventListener("resize", measureTrack, { passive: true });
-
-    return () => {
-      observer?.disconnect();
-      window.removeEventListener("resize", measureTrack);
-    };
-  }, [trackRef, viewportRef, remeasureKey]);
-
-  return trackRangeRef;
 }
 
 export function useMeasureSnapTrack(
@@ -315,12 +262,14 @@ export function useMeasureSnapTrack(
     }
 
     window.addEventListener("resize", measureTrack, { passive: true });
-    window.setTimeout(measureTrack, 120);
-    window.setTimeout(measureTrack, 500);
+    const measureTimerOne = window.setTimeout(measureTrack, 120);
+    const measureTimerTwo = window.setTimeout(measureTrack, 500);
 
     return () => {
       observer?.disconnect();
       window.removeEventListener("resize", measureTrack);
+      window.clearTimeout(measureTimerOne);
+      window.clearTimeout(measureTimerTwo);
     };
   }, [trackRef, viewportRef, cardSelector, remeasureKey]);
 

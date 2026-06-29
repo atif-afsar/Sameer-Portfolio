@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { motion, useSpring, useTransform } from "framer-motion";
 import ExpertiseSection from "./ExpertiseSection";
 import Home from "../pages/Home";
@@ -7,15 +8,36 @@ import PerformanceSection from "../pages/PerformanceSection";
 import ExperienceSection from "../pages/ExperienceSection";
 import Anime from "../pages/Anime";
 import { expertiseSections } from "../data/expertiseData";
+import {
+  ANIME_PANEL_INDEX,
+  EXPERTISE_START_INDEX,
+  EXPERIENCE_PANEL_INDEX,
+  getPanelIndex,
+  PANEL_COUNT,
+  PANEL_NAV_EVENT,
+  PERFORMANCE_PANEL_INDEX,
+} from "../data/panelNavigation";
 
-const PERFORMANCE_PANEL_INDEX = 2;
-const EXPERTISE_START_INDEX = 3;
-const EXPERIENCE_PANEL_INDEX = EXPERTISE_START_INDEX + expertiseSections.length;
-const ANIME_PANEL_INDEX = EXPERIENCE_PANEL_INDEX + 1;
-const PANEL_COUNT = ANIME_PANEL_INDEX + 1;
 const PANEL_TRANSITION_MS = 560;
 
+const PanelSlot = memo(function PanelSlot({ index, activePanel, children }) {
+  const isNear = Math.abs(activePanel - index) <= 1;
+
+  return (
+    <div
+      className="h-full w-screen shrink-0"
+      style={{
+        contentVisibility: isNear ? "visible" : "auto",
+        containIntrinsicSize: "100vw 100vh",
+      }}
+    >
+      {children}
+    </div>
+  );
+});
+
 export default function HorizontalPageShell() {
+  const location = useLocation();
   const [activePanel, setActivePanel] = useState(0);
   const activePanelRef = useRef(0);
   const panelLockRef = useRef(false);
@@ -40,6 +62,58 @@ export default function HorizontalPageShell() {
     }, PANEL_TRANSITION_MS);
   }, []);
 
+  const goToHome = useCallback(() => goToPanel(0), [goToPanel]);
+  const goToReels = useCallback(() => goToPanel(1), [goToPanel]);
+  const goToPerformance = useCallback(() => goToPanel(PERFORMANCE_PANEL_INDEX), [goToPanel]);
+  const goToExperience = useCallback(() => goToPanel(EXPERIENCE_PANEL_INDEX), [goToPanel]);
+  const goToAnime = useCallback(() => goToPanel(ANIME_PANEL_INDEX), [goToPanel]);
+
+  const goToExpertiseStart = useCallback(
+    () => goToPanel(EXPERTISE_START_INDEX),
+    [goToPanel]
+  );
+  const goToExperiencePrev = useCallback(
+    () => goToPanel(EXPERIENCE_PANEL_INDEX - 1),
+    [goToPanel]
+  );
+
+  const expertiseNavCallbacks = useMemo(
+    () =>
+      expertiseSections.map((_, index) => {
+        const panelIndex = EXPERTISE_START_INDEX + index;
+        return {
+          onReachStart: () => goToPanel(panelIndex - 1),
+          onReachEnd: () => goToPanel(panelIndex + 1),
+        };
+      }),
+    [goToPanel]
+  );
+
+  useEffect(() => {
+    const panelId = location.state?.panelId;
+    if (!panelId) return;
+
+    const panelIndex = getPanelIndex(panelId);
+    if (panelIndex !== undefined) {
+      goToPanel(panelIndex);
+    }
+  }, [location.state, goToPanel]);
+
+  useEffect(() => {
+    const handlePanelNavigate = (event) => {
+      const panelId = event.detail?.panelId;
+      if (!panelId) return;
+
+      const panelIndex = getPanelIndex(panelId);
+      if (panelIndex !== undefined) {
+        goToPanel(panelIndex);
+      }
+    };
+
+    window.addEventListener(PANEL_NAV_EVENT, handlePanelNavigate);
+    return () => window.removeEventListener(PANEL_NAV_EVENT, handlePanelNavigate);
+  }, [goToPanel]);
+
   useEffect(() => {
     panelOffset.set(activePanel * -100);
   }, [activePanel, panelOffset]);
@@ -61,59 +135,57 @@ export default function HorizontalPageShell() {
         className="flex h-full will-change-transform"
         style={{ width: `${PANEL_COUNT * 100}vw`, x: trackX }}
       >
-        <div className="h-full w-screen shrink-0">
-          <Home
-            isActive={activePanel === 0}
-            onReachEnd={() => goToPanel(1)}
-          />
-        </div>
+        <PanelSlot index={0} activePanel={activePanel}>
+          <Home isActive={activePanel === 0} onReachEnd={goToReels} />
+        </PanelSlot>
 
-        <div className="h-full w-screen shrink-0">
+        <PanelSlot index={1} activePanel={activePanel}>
           <ReelsSection
             isActive={activePanel === 1}
-            onReachStart={() => goToPanel(0)}
-            onReachEnd={() => goToPanel(PERFORMANCE_PANEL_INDEX)}
+            onReachStart={goToHome}
+            onReachEnd={goToPerformance}
           />
-        </div>
+        </PanelSlot>
 
-        <div className="h-full w-screen shrink-0">
+        <PanelSlot index={PERFORMANCE_PANEL_INDEX} activePanel={activePanel}>
           <PerformanceSection
             isActive={activePanel === PERFORMANCE_PANEL_INDEX}
-            onReachStart={() => goToPanel(1)}
-            onReachEnd={() => goToPanel(EXPERTISE_START_INDEX)}
+            onReachStart={goToReels}
+            onReachEnd={goToExpertiseStart}
           />
-        </div>
+        </PanelSlot>
 
         {expertiseSections.map((section, index) => {
           const panelIndex = expertiseStartIndex + index;
+          const nav = expertiseNavCallbacks[index];
 
           return (
-            <div key={section.id} className="h-full w-screen shrink-0">
+            <PanelSlot key={section.id} index={panelIndex} activePanel={activePanel}>
               <ExpertiseSection
                 {...section}
                 isActive={activePanel === panelIndex}
-                onReachStart={() => goToPanel(panelIndex - 1)}
-                onReachEnd={() => goToPanel(panelIndex + 1)}
+                onReachStart={nav.onReachStart}
+                onReachEnd={nav.onReachEnd}
               />
-            </div>
+            </PanelSlot>
           );
         })}
 
-        <div className="h-full w-screen shrink-0">
+        <PanelSlot index={EXPERIENCE_PANEL_INDEX} activePanel={activePanel}>
           <ExperienceSection
             isActive={activePanel === EXPERIENCE_PANEL_INDEX}
-            onReachStart={() => goToPanel(EXPERIENCE_PANEL_INDEX - 1)}
-            onReachEnd={() => goToPanel(ANIME_PANEL_INDEX)}
+            onReachStart={goToExperiencePrev}
+            onReachEnd={goToAnime}
           />
-        </div>
+        </PanelSlot>
 
-        <div className="h-full w-screen shrink-0">
+        <PanelSlot index={ANIME_PANEL_INDEX} activePanel={activePanel}>
           <Anime
             isActive={activePanel === ANIME_PANEL_INDEX}
-            onReachStart={() => goToPanel(EXPERIENCE_PANEL_INDEX)}
-            onBackToTop={() => goToPanel(0)}
+            onReachStart={goToExperience}
+            onBackToTop={goToHome}
           />
-        </div>
+        </PanelSlot>
       </motion.div>
     </div>
   );

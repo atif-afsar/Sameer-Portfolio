@@ -1,19 +1,28 @@
 import { motion } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+
+const LOADER_VIDEO = '/videos/IMG_4136.MOV';
 
 const Loader = ({ onComplete }) => {
   const [isExiting, setIsExiting] = useState(false);
+  const videoRef = useRef(null);
 
   useEffect(() => {
-    // Start exit animation after 2.5 seconds
+    const video = videoRef.current;
+    if (!video) return;
+    video.play().catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!onComplete) return undefined;
+
     const timer = setTimeout(() => {
       setIsExiting(true);
     }, 2500);
 
-    // Call onComplete after exit animation finishes
     const completeTimer = setTimeout(() => {
-      if (onComplete) onComplete();
-    }, 3200); // 2.5s + 0.7s exit animation
+      onComplete();
+    }, 3200);
 
     return () => {
       clearTimeout(timer);
@@ -30,16 +39,17 @@ const Loader = ({ onComplete }) => {
     >
       {/* Video Background - Full Screen */}
       <motion.video
+        ref={videoRef}
+        src={LOADER_VIDEO}
         initial={{ scale: 1.05, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
         autoPlay
         muted
         playsInline
+        preload="auto"
         className="absolute inset-0 w-full h-full object-cover"
-      >
-        <source src="/videos/IMG_4136.MOV" type="video/mp4" />
-      </motion.video>
+      />
     </motion.div>
   );
 };
