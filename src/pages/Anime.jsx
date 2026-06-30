@@ -110,9 +110,8 @@ function WaterFillText({
 export default function Anime({
   isActive = true,
   onReachStart,
-  onBackToTop,
 }) {
-  const scrollRef = usePanelScroll({ isActive, onReachStart });
+  const { scrollRef, scrollToTop } = usePanelScroll({ isActive, onReachStart });
 
   return (
     <section
@@ -184,7 +183,7 @@ export default function Anime({
       <Footer
         id="footer"
         scrollRoot={scrollRef}
-        onBackToTop={onBackToTop}
+        scrollToTop={scrollToTop}
       />
     </section>
   );

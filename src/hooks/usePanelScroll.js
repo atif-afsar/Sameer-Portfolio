@@ -1,10 +1,10 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 const BOUNDARY_COOLDOWN_MS = 520;
 const SCROLL_EASE = 0.11;
 const WHEEL_MULTIPLIER = 0.9;
 
-export function usePanelScroll({ isActive, onReachStart }) {
+export function usePanelScroll({ isActive, onReachStart, resetOnActivate = true }) {
   const scrollRef = useRef(null);
   const startTriggeredRef = useRef(false);
   const boundaryCooldownRef = useRef(false);
@@ -13,11 +13,17 @@ export function usePanelScroll({ isActive, onReachStart }) {
   const targetScrollRef = useRef(0);
   const rafRef = useRef(null);
   const wheelScrollingRef = useRef(false);
+  const scrollApiRef = useRef({ scrollToTop: () => {} });
 
   useEffect(() => {
     if (isActive && !wasActiveRef.current) {
       startTriggeredRef.current = false;
       boundaryCooldownRef.current = false;
+
+      if (resetOnActivate && scrollRef.current) {
+        scrollRef.current.scrollTop = 0;
+        targetScrollRef.current = 0;
+      }
     }
 
     if (isActive && scrollRef.current) {
@@ -25,7 +31,7 @@ export function usePanelScroll({ isActive, onReachStart }) {
     }
 
     wasActiveRef.current = isActive;
-  }, [isActive]);
+  }, [isActive, resetOnActivate]);
 
   useEffect(() => {
     const element = scrollRef.current;
@@ -83,20 +89,20 @@ export function usePanelScroll({ isActive, onReachStart }) {
       }, BOUNDARY_COOLDOWN_MS);
     };
 
-    const handleWheel = (event) => {
-      const atTop = element.scrollTop <= 1;
+    const applyScrollDelta = (deltaY) => {
+      if (!deltaY) return false;
 
-      if (atTop && event.deltaY < 0) {
-        event.preventDefault();
+      const atTop = element.scrollTop <= 1;
+      const scrollingUp = deltaY < 0;
+
+      if (atTop && scrollingUp) {
         triggerStart();
-        return;
+        return false;
       }
 
       if (!atTop) {
         startTriggeredRef.current = false;
       }
-
-      event.preventDefault();
 
       if (!wheelScrollingRef.current) {
         targetScrollRef.current = element.scrollTop;
@@ -104,15 +110,44 @@ export function usePanelScroll({ isActive, onReachStart }) {
 
       const maxScroll = getMaxScroll();
       targetScrollRef.current = Math.min(
-        Math.max(targetScrollRef.current + event.deltaY * WHEEL_MULTIPLIER, 0),
+        Math.max(targetScrollRef.current + deltaY * WHEEL_MULTIPLIER, 0),
         maxScroll
       );
 
       startWheelAnimation();
+      return true;
+    };
+
+    scrollApiRef.current.scrollToTop = (smooth = true) => {
+      if (!smooth) {
+        element.scrollTop = 0;
+        targetScrollRef.current = 0;
+        stopWheelAnimation();
+        return;
+      }
+
+      targetScrollRef.current = 0;
+      startWheelAnimation();
+    };
+
+    const handleWheel = (event) => {
+      const consumed = applyScrollDelta(event.deltaY);
+      if (consumed || (element.scrollTop <= 1 && event.deltaY < 0)) {
+        event.preventDefault();
+      }
     };
 
     const handleTouchStart = (event) => {
       if (event.touches.length !== 1) return;
+
+      const target = event.target;
+      if (
+        target instanceof Element &&
+        target.closest("a, button, input, textarea, select, [data-scroll-lock]")
+      ) {
+        return;
+      }
+
       stopWheelAnimation();
       touchStartYRef.current = event.touches[0].clientY;
       targetScrollRef.current = element.scrollTop;
@@ -121,27 +156,23 @@ export function usePanelScroll({ isActive, onReachStart }) {
     const handleTouchMove = (event) => {
       if (event.touches.length !== 1) return;
 
-      const atTop = element.scrollTop <= 1;
       const deltaY = touchStartYRef.current - event.touches[0].clientY;
-
-      if (atTop && deltaY < -12) {
-        triggerStart();
-      }
-
-      if (!atTop) {
-        startTriggeredRef.current = false;
-      }
-
       touchStartYRef.current = event.touches[0].clientY;
+
+      if (applyScrollDelta(deltaY)) {
+        event.preventDefault();
+      }
     };
 
     const handleScroll = () => {
       syncTarget();
     };
 
+    const touchOptions = { passive: false };
+
     element.addEventListener("wheel", handleWheel, { passive: false });
     element.addEventListener("touchstart", handleTouchStart, { passive: true });
-    element.addEventListener("touchmove", handleTouchMove, { passive: true });
+    element.addEventListener("touchmove", handleTouchMove, touchOptions);
     element.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
@@ -153,5 +184,9 @@ export function usePanelScroll({ isActive, onReachStart }) {
     };
   }, [isActive, onReachStart]);
 
-  return scrollRef;
+  const scrollToTop = useCallback((smooth = true) => {
+    scrollApiRef.current.scrollToTop(smooth);
+  }, []);
+
+  return { scrollRef, scrollToTop };
 }

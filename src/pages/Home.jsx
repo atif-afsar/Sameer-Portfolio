@@ -133,19 +133,86 @@ const roles = [
   "Copy Writer",
 ];
 
-function FlipCard({ src, index, target }) {
+// PERF: card geometry is computed off the React render path. This pure helper
+// takes the live spring values (morph / rotate / parallax) plus the entrance
+// progress values and returns the final transform for a single card. It is
+// only ever called inside `useTransform`, so framer-motion applies the result
+// straight to the DOM without triggering a React re-render.
+function computeCardState(index, [morph, rotate, parallax, eLine, eCircle], g) {
+  const total = g.total;
+  const scatter = g.scatter[index] || { x: 0, y: 0, rotation: 0 };
+
+  const lineTotalWidth = total * g.lineSpacing;
+  const lineX = index * g.lineSpacing - lineTotalWidth / 2;
+  const lineY = g.lineY;
+
+  const circleAngle = (index / total) * 360;
+  const circleRad = (circleAngle * Math.PI) / 180;
+  const circleX = Math.cos(circleRad) * g.circleRadius;
+  const circleY = Math.sin(circleRad) * g.circleRadius + (g.isMobile ? 16 : 26);
+  const circleRot = circleAngle + 90;
+
+  const arcRadius = Math.min(g.width, g.height * 1.45) * (g.isMobile ? 1.5 : 1.12);
+  const arcApexY = g.height * (g.isMobile ? 0.45 : 0.34);
+  const arcCenterY = arcApexY + arcRadius;
+  const spreadAngle = g.isMobile ? 106 : 138;
+  const startAngle = -90 - spreadAngle / 2;
+  const step = spreadAngle / (total - 1);
+  const scrollProgress = Math.min(Math.max(rotate / 360, 0), 1);
+  const boundedRotation = -scrollProgress * spreadAngle * 0.78;
+  const currentArcAngle = startAngle + index * step + boundedRotation;
+  const arcRad = (currentArcAngle * Math.PI) / 180;
+  const arcX = Math.cos(arcRad) * arcRadius + parallax;
+  const arcY = Math.sin(arcRad) * arcRadius + arcCenterY;
+  const arcRot = currentArcAngle + 90;
+  const arcScale = g.isMobile ? 1.26 : 1.62;
+
+  const caX = lerp(circleX, arcX, morph);
+  const caY = lerp(circleY, arcY, morph);
+  const caRot = lerp(circleRot, arcRot, morph);
+  const caScale = lerp(1, arcScale, morph);
+
+  const p1x = lerp(scatter.x, lineX, eLine);
+  const p1y = lerp(scatter.y, lineY, eLine);
+  const p1rot = lerp(scatter.rotation, 0, eLine);
+  const p1scale = lerp(0.55, 1, eLine);
+
+  return {
+    x: lerp(p1x, caX, eCircle),
+    y: lerp(p1y, caY, eCircle),
+    rot: lerp(p1rot, caRot, eCircle),
+    scale: lerp(p1scale, caScale, eCircle),
+    opacity: eLine,
+  };
+}
+
+function FlipCard({
+  src,
+  index,
+  smoothMorph,
+  smoothScrollRotate,
+  smoothMouseX,
+  enterLine,
+  enterCircle,
+  geomVersion,
+  geomRef,
+}) {
+  const state = useTransform(
+    [smoothMorph, smoothScrollRotate, smoothMouseX, enterLine, enterCircle, geomVersion],
+    (values) => computeCardState(index, values, geomRef.current)
+  );
+  const transform = useTransform(
+    state,
+    (s) => `translate3d(${s.x}px, ${s.y}px, 0) rotate(${s.rot}deg) scale(${s.scale})`
+  );
+  const opacity = useTransform(state, (s) => s.opacity);
+
   return (
     <motion.div
-      animate={{
-        x: target.x,
-        y: target.y,
-        rotate: target.rotation,
-        scale: target.scale,
-        opacity: target.opacity,
-      }}
-      transition={{ type: "spring", stiffness: 42, damping: 16 }}
       className="absolute h-[76px] w-[54px] sm:h-[86px] sm:w-[62px] lg:h-[98px] lg:w-[70px] cursor-pointer"
       style={{
+        transform,
+        opacity,
         transformStyle: "preserve-3d",
         perspective: "1000px",
         willChange: "transform, opacity",
@@ -187,24 +254,11 @@ function FlipCard({ src, index, target }) {
   );
 }
 
-const MemoFlipCard = memo(
-  FlipCard,
-  (prev, next) =>
-    prev.src === next.src &&
-    prev.index === next.index &&
-    prev.target.x === next.target.x &&
-    prev.target.y === next.target.y &&
-    prev.target.rotation === next.target.rotation &&
-    prev.target.scale === next.target.scale &&
-    prev.target.opacity === next.target.opacity
-);
+const MemoFlipCard = memo(FlipCard);
 
 export default function Home({ isActive = true, onReachEnd }) {
   const [introPhase, setIntroPhase] = useState("scatter");
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
-  const [morphValue, setMorphValue] = useState(0);
-  const [rotateValue, setRotateValue] = useState(0);
-  const [parallaxValue, setParallaxValue] = useState(0);
   const [displayText, setDisplayText] = useState("");
   const [roleIndex, setRoleIndex] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -236,6 +290,29 @@ export default function Home({ isActive = true, onReachEnd }) {
   const contentOpacity = useTransform(smoothMorph, [0.72, 1], [0, 1]);
   const contentY = useTransform(smoothMorph, [0.72, 1], [18, 0]);
   const introOpacity = useTransform(smoothMorph, [0, 0.55], [1, 0]);
+
+  // PERF: entrance choreography (scatter -> line -> circle) is driven by two
+  // spring motion values instead of per-card `animate` props, so the cards
+  // never re-render through React during the intro or while scrolling.
+  const enterLineTarget = useMotionValue(0);
+  const enterLine = useSpring(enterLineTarget, { stiffness: 70, damping: 18 });
+  const enterCircleTarget = useMotionValue(0);
+  const enterCircle = useSpring(enterCircleTarget, { stiffness: 52, damping: 18 });
+
+  // PERF: geometry is stored in a ref and a version counter (a motion value).
+  // Cards read the latest geometry inside their `useTransform`, and bumping the
+  // version forces a single recompute when the viewport size changes.
+  const geomVersion = useMotionValue(0);
+  const geomRef = useRef({
+    total: totalImages,
+    isMobile: false,
+    circleRadius: 320,
+    width: 360,
+    height: 640,
+    lineSpacing: 68,
+    lineY: 0,
+    scatter: [],
+  });
 
   const scatterPositions = useMemo(
     () =>
@@ -283,6 +360,40 @@ export default function Home({ isActive = true, onReachEnd }) {
       window.clearTimeout(timerTwo);
     };
   }, []);
+
+  // PERF: keep card geometry up to date without re-rendering cards.
+  useEffect(() => {
+    const width = containerSize.width || 360;
+    const height = containerSize.height || 640;
+
+    geomRef.current = {
+      total: totalImages,
+      isMobile: orbitTextBounds.isMobile,
+      circleRadius: orbitTextBounds.circleRadius,
+      width,
+      height,
+      lineSpacing: width < 640 ? 48 : 68,
+      lineY: width < 640 ? 24 : 0,
+      scatter: scatterPositions,
+    };
+    geomVersion.set(geomVersion.get() + 1);
+  }, [
+    containerSize.width,
+    containerSize.height,
+    orbitTextBounds,
+    scatterPositions,
+    geomVersion,
+  ]);
+
+  // PERF: advance the entrance springs as the intro phase changes.
+  useEffect(() => {
+    if (introPhase === "line") {
+      enterLineTarget.set(1);
+    } else if (introPhase === "circle") {
+      enterLineTarget.set(1);
+      enterCircleTarget.set(1);
+    }
+  }, [introPhase, enterLineTarget, enterCircleTarget]);
 
   useEffect(() => {
     if (!isActive) return undefined;
@@ -452,115 +563,6 @@ export default function Home({ isActive = true, onReachEnd }) {
     };
   }, [isActive, mouseX]);
 
-  useEffect(() => {
-    if (!isActive) return undefined;
-
-    let rafId = null;
-    let latestMorph = morphValue;
-    let latestRotate = rotateValue;
-    let latestParallax = parallaxValue;
-
-    const flush = () => {
-      rafId = null;
-      setMorphValue(latestMorph);
-      setRotateValue(latestRotate);
-      setParallaxValue(latestParallax);
-    };
-
-    const scheduleFlush = () => {
-      if (!rafId) {
-        rafId = requestAnimationFrame(flush);
-      }
-    };
-
-    const unsubscribeMorph = smoothMorph.on("change", (value) => {
-      latestMorph = value;
-      scheduleFlush();
-    });
-    const unsubscribeRotate = smoothScrollRotate.on("change", (value) => {
-      latestRotate = value;
-      scheduleFlush();
-    });
-    const unsubscribeParallax = smoothMouseX.on("change", (value) => {
-      latestParallax = value;
-      scheduleFlush();
-    });
-
-    return () => {
-      if (rafId) cancelAnimationFrame(rafId);
-      unsubscribeMorph();
-      unsubscribeRotate();
-      unsubscribeParallax();
-    };
-  }, [isActive, smoothMorph, smoothMouseX, smoothScrollRotate]);
-
-  const cardTargets = useMemo(() => {
-    return imageSources.map((_, index) => {
-      if (introPhase === "scatter") {
-        return scatterPositions[index];
-      }
-
-      if (introPhase === "line") {
-        const lineSpacing = containerSize.width < 640 ? 48 : 68;
-        const lineTotalWidth = totalImages * lineSpacing;
-        const lineX = index * lineSpacing - lineTotalWidth / 2;
-
-        return {
-          x: lineX,
-          y: containerSize.width < 640 ? 24 : 0,
-          rotation: 0,
-          scale: 1,
-          opacity: 1,
-        };
-      }
-
-      const isMobile = orbitTextBounds.isMobile;
-      const circleRadius = orbitTextBounds.circleRadius;
-      const circleAngle = (index / totalImages) * 360;
-      const circleRad = (circleAngle * Math.PI) / 180;
-      const circlePos = {
-        x: Math.cos(circleRad) * circleRadius,
-        y: Math.sin(circleRad) * circleRadius + (isMobile ? 16 : 26),
-        rotation: circleAngle + 90,
-      };
-      const arcRadius =
-        Math.min(containerSize.width || 1, (containerSize.height || 1) * 1.45) *
-        (isMobile ? 1.5 : 1.12);
-      const arcApexY = (containerSize.height || 1) * (isMobile ? 0.45 : 0.34);
-      const arcCenterY = arcApexY + arcRadius;
-      const spreadAngle = isMobile ? 106 : 138;
-      const startAngle = -90 - spreadAngle / 2;
-      const step = spreadAngle / (totalImages - 1);
-      const scrollProgress = Math.min(Math.max(rotateValue / 360, 0), 1);
-      const boundedRotation = -scrollProgress * spreadAngle * 0.78;
-      const currentArcAngle = startAngle + index * step + boundedRotation;
-      const arcRad = (currentArcAngle * Math.PI) / 180;
-      const arcPos = {
-        x: Math.cos(arcRad) * arcRadius + parallaxValue,
-        y: Math.sin(arcRad) * arcRadius + arcCenterY,
-        rotation: currentArcAngle + 90,
-        scale: isMobile ? 1.26 : 1.62,
-      };
-
-      return {
-        x: lerp(circlePos.x, arcPos.x, morphValue),
-        y: lerp(circlePos.y, arcPos.y, morphValue),
-        rotation: lerp(circlePos.rotation, arcPos.rotation, morphValue),
-        scale: lerp(1, arcPos.scale, morphValue),
-        opacity: 1,
-      };
-    });
-  }, [
-    introPhase,
-    containerSize.width,
-    containerSize.height,
-    morphValue,
-    rotateValue,
-    parallaxValue,
-    orbitTextBounds,
-    scatterPositions,
-  ]);
-
   return (
     <section
       id="home"
@@ -640,7 +642,13 @@ export default function Home({ isActive = true, onReachEnd }) {
               key={`${src}-${index}`}
               src={src}
               index={index}
-              target={cardTargets[index]}
+              smoothMorph={smoothMorph}
+              smoothScrollRotate={smoothScrollRotate}
+              smoothMouseX={smoothMouseX}
+              enterLine={enterLine}
+              enterCircle={enterCircle}
+              geomVersion={geomVersion}
+              geomRef={geomRef}
             />
           ))}
         </div>

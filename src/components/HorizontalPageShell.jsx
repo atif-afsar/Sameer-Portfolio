@@ -183,7 +183,6 @@ export default function HorizontalPageShell() {
           <Anime
             isActive={activePanel === ANIME_PANEL_INDEX}
             onReachStart={goToExperience}
-            onBackToTop={goToHome}
           />
         </PanelSlot>
       </motion.div>

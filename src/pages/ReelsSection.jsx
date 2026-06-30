@@ -8,12 +8,11 @@ import {
 } from "../hooks/useSectionScroll";
 
 const reels = [
-  { id: "reel-2", title: "Reel 02", videoSrc: "/videos/Video-70.mp4" },
-  { id: "reel-3", title: "Reel 03", videoSrc: "/videos/Video-513.mp4" },
+  { id: "reel-2", title: "Reel 02", videoSrc: "/videos/video-70_98SJEIEj.mp4" },
+  { id: "reel-3", title: "Reel 03", videoSrc: "/videos/video-513_sZR6tsvs.mp4" },
   { id: "reel-4", title: "Reel 04", videoSrc: "/videos/Video-976.mp4" },
   { id: "reel-5", title: "Reel 05", videoSrc: "/videos/e6cf69b4-0c14-46ad-8416-674ea5906a7e.mp4" },
-  { id: "reel-1", title: "Reel 01", videoSrc: "/videos/Video-9.mp4" },
-
+  { id: "reel-1", title: "Reel 01", videoSrc: "/videos/video-9_qcmKCA11.mp4" },
   {
     id: "reel-8",
     title: "Reel 08",
@@ -63,13 +62,14 @@ function FloatingBubbles({ opacity, active = true }) {
       {bubbles.map((bubble) => (
         <motion.span
           key={bubble.id}
-          className="absolute rounded-full border border-white/50 shadow-[0_8px_28px_rgba(0,0,0,0.06)] backdrop-blur-[2px]"
+          className="absolute rounded-full border border-white/50 shadow-[0_8px_28px_rgba(0,0,0,0.06)]"
           style={{
             width: bubble.size,
             height: bubble.size,
             left: bubble.left,
             top: bubble.top,
             background: bubble.color,
+            willChange: "transform, opacity",
           }}
           initial={{ scale: 0.6, opacity: 0 }}
           animate={

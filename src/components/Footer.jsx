@@ -64,6 +64,7 @@ function Reveal({
 export default function Footer({
   id = "footer",
   scrollRoot,
+  scrollToTop,
   onBackToTop,
 }) {
   const [time, setTime] = useState("");
@@ -84,6 +85,11 @@ export default function Footer({
   }, []);
 
   const handleBackToTop = () => {
+    if (scrollToTop) {
+      scrollToTop();
+      return;
+    }
+
     if (scrollRoot?.current) {
       scrollRoot.current.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -195,7 +201,7 @@ export default function Footer({
             aria-hidden="true"
           >
             <p
-              className="footer-signature__name flex w-full max-w-full flex-col items-center gap-0.5 text-center font-black uppercase text-white/[0.06] sm:gap-1"
+              className="footer-signature__name flex w-full max-w-full flex-col items-start gap-0.5 pl-1 text-left font-black uppercase text-white/[0.06] sm:items-center sm:gap-1 sm:pl-0 sm:text-center"
               style={{ fontFamily: "'Syne', sans-serif" }}
             >
               <span className="footer-signature__line">Sameer</span>

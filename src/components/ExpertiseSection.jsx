@@ -50,13 +50,14 @@ function FloatingBubbles({ opacity, active = true }) {
       {bubbles.map((bubble) => (
         <motion.span
           key={bubble.id}
-          className="absolute rounded-full border border-white/50 shadow-[0_8px_28px_rgba(0,0,0,0.06)] backdrop-blur-[2px]"
+          className="absolute rounded-full border border-white/50 shadow-[0_8px_28px_rgba(0,0,0,0.06)]"
           style={{
             width: bubble.size,
             height: bubble.size,
             left: bubble.left,
             top: bubble.top,
             background: bubble.color,
+            willChange: "transform, opacity",
           }}
           animate={
             active
