@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef } from "react";
-import { useInView, useMotionValue, useSpring } from "framer-motion";
+import { animate, useMotionValue } from "framer-motion";
 
 function parseMetricValue(value) {
   const str = String(value).trim();
@@ -22,26 +22,19 @@ function formatMetric({ prefix, numeric, suffix, decimals }) {
   return `${prefix}${formatted}${suffix}`;
 }
 
-export default memo(function MetricCounter({ value, className, style, active }) {
+export default memo(function MetricCounter({
+  value,
+  className,
+  style,
+  active = false,
+  delay = 0,
+}) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, amount: 0.35 });
-  const shouldAnimate = active ?? isInView;
   const parsed = parseMetricValue(value);
-
   const motionValue = useMotionValue(0);
-  const springValue = useSpring(motionValue, {
-    damping: 55,
-    stiffness: 90,
-  });
 
   useEffect(() => {
-    if (shouldAnimate) {
-      motionValue.set(parsed.numeric);
-    }
-  }, [shouldAnimate, motionValue, parsed.numeric]);
-
-  useEffect(() => {
-    const unsubscribe = springValue.on("change", (latest) => {
+    const updateDisplay = (latest) => {
       if (!ref.current) return;
 
       ref.current.textContent = formatMetric({
@@ -50,10 +43,35 @@ export default memo(function MetricCounter({ value, className, style, active }) 
         suffix: parsed.suffix,
         decimals: parsed.decimals,
       });
-    });
+    };
 
-    return unsubscribe;
-  }, [springValue, parsed.prefix, parsed.suffix, parsed.decimals]);
+    updateDisplay(motionValue.get());
+    return motionValue.on("change", updateDisplay);
+  }, [motionValue, parsed.prefix, parsed.suffix, parsed.decimals]);
+
+  useEffect(() => {
+    if (!active) {
+      motionValue.stop();
+      motionValue.set(0);
+      return undefined;
+    }
+
+    motionValue.set(0);
+
+    let controls;
+    const timeoutId = window.setTimeout(() => {
+      controls = animate(motionValue, parsed.numeric, {
+        duration: 1.65,
+        ease: [0.22, 1, 0.36, 1],
+      });
+    }, delay * 1000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      controls?.stop();
+      motionValue.stop();
+    };
+  }, [active, delay, motionValue, parsed.numeric]);
 
   const initialDisplay = formatMetric({
     prefix: parsed.prefix,

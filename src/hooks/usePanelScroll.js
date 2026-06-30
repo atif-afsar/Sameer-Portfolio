@@ -137,42 +137,45 @@ export function usePanelScroll({ isActive, onReachStart, resetOnActivate = true 
       }
     };
 
+    // TOUCH: rely on the browser's native scrolling (with momentum) for the
+    // panel body instead of the JS rAF animation. The custom path made the
+    // final panel feel stuck on phones. We only watch the top edge: a clear
+    // downward pull while already at the top sends the user to the previous
+    // panel.
+    let pullAccum = 0;
+
     const handleTouchStart = (event) => {
       if (event.touches.length !== 1) return;
-
-      const target = event.target;
-      if (
-        target instanceof Element &&
-        target.closest("a, button, input, textarea, select, [data-scroll-lock]")
-      ) {
-        return;
-      }
-
       stopWheelAnimation();
       touchStartYRef.current = event.touches[0].clientY;
-      targetScrollRef.current = element.scrollTop;
+      pullAccum = 0;
     };
 
     const handleTouchMove = (event) => {
       if (event.touches.length !== 1) return;
 
-      const deltaY = touchStartYRef.current - event.touches[0].clientY;
-      touchStartYRef.current = event.touches[0].clientY;
+      const currentY = event.touches[0].clientY;
+      const deltaY = touchStartYRef.current - currentY; // >0 scroll down, <0 pull down
+      touchStartYRef.current = currentY;
 
-      if (applyScrollDelta(deltaY)) {
-        event.preventDefault();
+      if (element.scrollTop <= 0 && deltaY < 0) {
+        pullAccum += -deltaY;
+        if (pullAccum > 52) {
+          triggerStart();
+        }
+      } else if (deltaY > 0) {
+        pullAccum = 0;
       }
+      // No preventDefault: native scroll + momentum stay intact.
     };
 
     const handleScroll = () => {
       syncTarget();
     };
 
-    const touchOptions = { passive: false };
-
     element.addEventListener("wheel", handleWheel, { passive: false });
     element.addEventListener("touchstart", handleTouchStart, { passive: true });
-    element.addEventListener("touchmove", handleTouchMove, touchOptions);
+    element.addEventListener("touchmove", handleTouchMove, { passive: true });
     element.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {

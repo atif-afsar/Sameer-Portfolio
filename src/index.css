@@ -8,6 +8,11 @@ html.horizontal-shell-active body {
   touch-action: none;
 }
 
+body.loader-active {
+  overflow: hidden;
+  background-color: #000;
+}
+
 .section-scroll-target {
   touch-action: none;
   -webkit-user-select: none;
@@ -183,47 +188,56 @@ html.horizontal-shell-active body {
   container-type: inline-size;
   width: 100%;
   max-width: 100%;
-  padding-inline: 1.25rem;
 }
 
 .footer-signature__name {
   width: 100%;
   max-width: 100%;
   margin-inline: auto;
-  font-size: clamp(1.1rem, 8.5cqi, 5.5rem);
-  line-height: 1;
-  letter-spacing: -0.02em;
+  font-family: "Archivo Black", sans-serif;
+  font-size: clamp(2.35rem, 13.5vw, 5.25rem);
+  font-weight: 400;
+  line-height: 0.88;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
 }
 
 .footer-signature__line {
   display: block;
   width: fit-content;
   max-width: 100%;
+  padding: 0.14em 0.34em 0.1em;
+  background-color: #ffd400;
+  color: #000;
   white-space: nowrap;
-  text-align: left;
-  overflow: visible;
+  text-align: center;
+  transform: scaleX(1.06);
+  transform-origin: center;
 }
 
 @media (min-width: 640px) {
-  .footer-signature {
-    padding-inline: 0.25rem;
-  }
-
   .footer-signature__name {
-    font-size: clamp(2.25rem, 10vw, 4.75rem);
-    letter-spacing: -0.03em;
+    font-size: clamp(3rem, 10.5vw, 5.5rem);
+    letter-spacing: 0.05em;
   }
 
   .footer-signature__line {
-    width: 100%;
-    text-align: center;
+    padding: 0.12em 0.38em 0.08em;
+    transform: scaleX(1.08);
   }
 }
 
 @media (min-width: 1024px) {
   .footer-signature__name {
-    font-size: clamp(3rem, 5.5vw, 5.5rem);
+    font-size: clamp(3.75rem, 5.75vw, 6.25rem);
   }
+}
+
+.font-display-extended {
+  font-family: "Archivo Black", sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 
 .footer-thank-you-marquee {

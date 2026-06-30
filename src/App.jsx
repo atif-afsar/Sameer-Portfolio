@@ -7,44 +7,30 @@ const HorizontalPageShell = lazy(() => import('./components/HorizontalPageShell'
 const Contact = lazy(() => import('./pages/Contact'))
 const ParallaxDemo = lazy(() => import('./pages/ParallaxDemo'))
 
-const LOADER_SEEN_KEY = 'sameer-portfolio-loader-seen'
-
-function hasSeenLoader() {
-  try {
-    return localStorage.getItem(LOADER_SEEN_KEY) === '1'
-  } catch {
-    return false
-  }
-}
-
 const App = () => {
-  const [loading, setLoading] = useState(() => !hasSeenLoader())
+  const [loading, setLoading] = useState(true)
 
   const handleLoaderComplete = useCallback(() => {
-    try {
-      localStorage.setItem(LOADER_SEEN_KEY, '1')
-    } catch {
-      // Ignore storage errors (private mode, etc.)
-    }
     setLoading(false)
   }, [])
 
   return (
     <>
-      {loading && <Loader onComplete={handleLoaderComplete} />}
+      <div
+        aria-hidden={loading}
+        className={loading ? 'pointer-events-none invisible' : undefined}
+      >
+        <Navbar />
+        <Suspense fallback={null}>
+          <Routes>
+            <Route path="/" element={<HorizontalPageShell />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/parallax-demo" element={<ParallaxDemo />} />
+          </Routes>
+        </Suspense>
+      </div>
 
-      {!loading && (
-        <>
-          <Navbar />
-          <Suspense fallback={null}>
-            <Routes>
-              <Route path="/" element={<HorizontalPageShell />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/parallax-demo" element={<ParallaxDemo />} />
-            </Routes>
-          </Suspense>
-        </>
-      )}
+      {loading && <Loader onComplete={handleLoaderComplete} />}
     </>
   )
 }

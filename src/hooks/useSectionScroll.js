@@ -9,9 +9,12 @@ function getInputConfig() {
     window.matchMedia("(pointer: coarse)").matches ||
     window.matchMedia("(max-width: 767px)").matches;
 
+  // Lower multipliers + smaller per-event cap = the intro and the card track
+  // advance gradually instead of flashing past in a single swipe/flick. Mobile
+  // keeps a slightly higher feel so a normal swipe still makes clear progress.
   return isMobile
-    ? { scrollMultiplier: 0.0042, maxScrollStep: 0.12, touchMultiplier: 3.2 }
-    : { scrollMultiplier: 0.00135, maxScrollStep: 0.045, touchMultiplier: 1.8 };
+    ? { scrollMultiplier: 0.0023, maxScrollStep: 0.05, touchMultiplier: 1.7 }
+    : { scrollMultiplier: 0.0011, maxScrollStep: 0.03, touchMultiplier: 1.3 };
 }
 
 export function useSectionScroll({
@@ -23,10 +26,13 @@ export function useSectionScroll({
   const sectionRef = useRef(null);
   const progressRef = useRef(0);
   const progress = useMotionValue(0);
+  // Responsive yet glassy: higher stiffness removes the initial lag ("delay"),
+  // while the damping/mass keep it from overshooting so cards don't snap past.
   const smoothProgress = useSpring(progress, {
-    stiffness: isMobileSpring() ? 52 : 46,
-    damping: isMobileSpring() ? 26 : 24,
-    mass: 0.78,
+    stiffness: isMobileSpring() ? 96 : 88,
+    damping: isMobileSpring() ? 30 : 28,
+    mass: 0.5,
+    restDelta: 0.0006,
   });
 
   const startTriggeredRef = useRef(false);

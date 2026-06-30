@@ -197,16 +197,12 @@ export default function Footer({
               amount: 0.25,
               ...(scrollRoot ? { root: scrollRoot } : {}),
             }}
-            className="footer-signature pointer-events-none mb-6 w-full sm:mb-8"
-            aria-hidden="true"
+            className="footer-signature mb-6 w-full sm:mb-8"
           >
-            <p
-              className="footer-signature__name flex w-full max-w-full flex-col items-start gap-0.5 pl-1 text-left font-black uppercase text-white/[0.06] sm:items-center sm:gap-1 sm:pl-0 sm:text-center"
-              style={{ fontFamily: "'Syne', sans-serif" }}
-            >
+            <div className="footer-signature__name flex flex-col items-center gap-0">
               <span className="footer-signature__line">Sameer</span>
               <span className="footer-signature__line">Shameem</span>
-            </p>
+            </div>
           </motion.div>
 
           <Reveal

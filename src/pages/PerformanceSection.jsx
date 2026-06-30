@@ -1,5 +1,5 @@
-import { useMemo, useRef } from "react";
-import { motion, useInView, useTransform } from "framer-motion";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { motion, useTransform } from "framer-motion";
 import MetricCounter from "../components/MetricCounter";
 import {
   performanceHighlights,
@@ -58,17 +58,15 @@ function FloatingBubbles({ opacity, active = true }) {
   );
 }
 
-function PerformanceMetricsPanel() {
-  const panelRef = useRef(null);
-  const isPanelActive = useInView(panelRef, { once: true, amount: 0.35 });
+const METRICS_COUNTER_START = 0.48;
+const METRICS_COUNTER_RESET = 0.38;
+
+function PerformanceMetricsPanel({ countersActive }) {
   const heroStat = performanceStats.find((s) => s.highlight) ?? performanceStats[0];
   const gridStats = performanceStats.filter((s) => !s.highlight);
 
   return (
-    <div
-      ref={panelRef}
-      className="performance-metrics-panel w-full max-w-[min(96vw,760px)]"
-    >
+    <div className="performance-metrics-panel w-full max-w-[min(96vw,760px)]">
       <div className="relative rounded-[1.5rem] border border-white/75 bg-white/70 px-4 py-5 shadow-[0_28px_70px_rgba(0,0,0,0.1)] backdrop-blur-xl sm:rounded-[1.85rem] sm:px-7 sm:py-7 lg:rounded-[2rem] lg:px-9 lg:py-8">
         <div className="pointer-events-none absolute inset-0 rounded-[inherit] bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.92),transparent_55%)]" />
         <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-[rgba(245,168,62,0.14)] blur-3xl" />
@@ -78,11 +76,8 @@ function PerformanceMetricsPanel() {
             Campaign impact
           </span>
 
-          <p
-            className="mt-4 text-[clamp(2.5rem,12vw,4.75rem)] font-semibold leading-none tracking-[-0.05em] text-[#111111] sm:mt-5 lg:text-[clamp(3rem,8vw,5.25rem)]"
-            style={{ fontFamily: "'Syne', sans-serif" }}
-          >
-            <MetricCounter value={heroStat.value} active={isPanelActive} />
+          <p className="font-display-extended mt-4 text-[clamp(2.5rem,12vw,4.75rem)] leading-none tracking-[0.02em] text-[#111111] sm:mt-5 lg:text-[clamp(3rem,8vw,5.25rem)]">
+            <MetricCounter value={heroStat.value} active={countersActive} delay={0} />
           </p>
           <p className="mt-1.5 text-[11px] font-medium uppercase tracking-[0.18em] text-black/50 sm:mt-2 sm:text-[13px] sm:tracking-[0.22em]">
             {heroStat.label}
@@ -102,11 +97,12 @@ function PerformanceMetricsPanel() {
               <p className="text-[8px] font-semibold uppercase leading-tight tracking-[0.14em] text-black/50 sm:text-[9px] sm:tracking-[0.16em] lg:text-[10px]">
                 {stat.label}
               </p>
-              <p
-                className="mt-1.5 text-[clamp(1.1rem,4.5vw,1.45rem)] font-semibold leading-none tracking-[-0.03em] text-black sm:mt-2 lg:text-[1.55rem]"
-                style={{ fontFamily: "'Syne', sans-serif" }}
-              >
-                <MetricCounter value={stat.value} active={isPanelActive} />
+              <p className="font-display-extended mt-1.5 text-[clamp(1.1rem,4.5vw,1.45rem)] leading-none tracking-[0.02em] text-black sm:mt-2 lg:text-[1.55rem]">
+                <MetricCounter
+                  value={stat.value}
+                  active={countersActive}
+                  delay={0.12 + index * 0.1}
+                />
               </p>
             </div>
           ))}
@@ -133,6 +129,7 @@ export default function PerformanceSection({
   onReachEnd,
 }) {
   const cardLayerRef = useRef(null);
+  const [countersActive, setCountersActive] = useState(false);
 
   const { sectionRef, smoothProgress, introProgress, trackProgress } = useSectionScroll({
     isActive,
@@ -162,6 +159,27 @@ export default function PerformanceSection({
 
   const cardHintOpacity = useTransform(trackProgress, [0.14, 0.28, 0.48, 0.65], [0, 1, 0.5, 0]);
   const metricsHintOpacity = useTransform(trackProgress, [0.55, 0.7, 0.92, 1], [0, 1, 0.45, 0]);
+
+  useEffect(() => {
+    const syncCounters = (value) => {
+      if (value >= METRICS_COUNTER_START) {
+        setCountersActive(true);
+        return;
+      }
+
+      if (value <= METRICS_COUNTER_RESET) {
+        setCountersActive(false);
+      }
+    };
+
+    syncCounters(trackProgress.get());
+    return trackProgress.on("change", syncCounters);
+  }, [trackProgress]);
+
+  useEffect(() => {
+    if (isActive) return;
+    setCountersActive(false);
+  }, [isActive]);
 
   return (
     <section
@@ -202,7 +220,7 @@ export default function PerformanceSection({
         }}
         className="performance-metrics-stage absolute inset-0 z-30 flex items-start justify-center overflow-x-hidden overflow-y-auto px-3 pb-8 pt-[4.75rem] sm:px-5 sm:pb-10 sm:pt-[5.25rem] lg:items-center lg:overflow-y-hidden lg:pb-12 lg:pt-16"
       >
-        <PerformanceMetricsPanel />
+        <PerformanceMetricsPanel countersActive={countersActive} />
 
         <motion.p
           style={{ opacity: metricsHintOpacity }}
