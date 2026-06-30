@@ -112,21 +112,21 @@ const ExpertiseCard = memo(function ExpertiseCard({ card, index }) {
         }}
       />
 
-      <div className="relative flex flex-1 flex-col p-4 sm:p-5 lg:p-6">
+      <div className="relative flex flex-1 flex-col p-3.5 sm:p-5 lg:p-6">
         <div className="flex items-start justify-between gap-3">
           <span className="inline-flex max-w-[75%] items-center rounded-full border border-black/10 bg-white/80 px-2.5 py-1 text-[8px] font-bold uppercase tracking-[0.18em] text-black/55 backdrop-blur-sm sm:px-3 sm:text-[9px] sm:tracking-[0.22em]">
             {card.tag}
           </span>
           <span
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-[10px] font-semibold tabular-nums text-black/35 ring-1 ring-black/[0.06] sm:h-8 sm:w-8 sm:text-[11px]"
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-[9px] font-semibold tabular-nums text-black/35 ring-1 ring-black/[0.06] sm:h-8 sm:w-8 sm:text-[11px]"
             aria-hidden="true"
           >
             {String(index + 1).padStart(2, "0")}
           </span>
         </div>
 
-        <div className="relative mt-4 flex items-center gap-3.5 sm:mt-5 sm:gap-4">
-          <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-[#f4f2eb] ring-1 ring-black/[0.06] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] sm:h-16 sm:w-16 lg:h-[72px] lg:w-[72px]">
+        <div className="relative mt-3 flex items-center gap-3 sm:mt-5 sm:gap-4">
+          <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#f4f2eb] ring-1 ring-black/[0.06] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] sm:h-16 sm:w-16 sm:rounded-2xl lg:h-[72px] lg:w-[72px]">
             <img
               src={card.image}
               alt=""
@@ -137,22 +137,22 @@ const ExpertiseCard = memo(function ExpertiseCard({ card, index }) {
             />
           </div>
           <h3
-            className="min-w-0 flex-1 text-[1.15rem] font-semibold leading-[1.08] tracking-[-0.03em] text-[#111111] sm:text-[1.35rem] lg:text-[1.5rem]"
+            className="min-w-0 flex-1 text-[1.02rem] font-semibold leading-[1.08] tracking-[-0.03em] text-[#111111] sm:text-[1.35rem] lg:text-[1.5rem]"
             style={{ fontFamily: "'Syne', sans-serif" }}
           >
             {card.title}
           </h3>
         </div>
 
-        <p className="relative mt-3.5 line-clamp-3 text-[12.5px] leading-[1.65] text-black/58 sm:mt-4 sm:line-clamp-none sm:text-[13.5px] lg:text-[14.5px] lg:leading-[1.7]">
+        <p className="relative mt-3 line-clamp-3 text-[11.5px] leading-[1.55] text-black/58 sm:mt-4 sm:line-clamp-none sm:text-[13.5px] lg:text-[14.5px] lg:leading-[1.7]">
           {card.description}
         </p>
 
-        <div className="relative mt-auto grid grid-cols-2 gap-2 pt-4 sm:gap-2.5 sm:pt-5 lg:gap-3 lg:pt-6">
+        <div className="relative mt-auto grid grid-cols-2 gap-2 pt-3.5 sm:gap-2.5 sm:pt-5 lg:gap-3 lg:pt-6">
           {card.metrics.map((metric, metricIndex) => (
             <div
               key={metric.label}
-              className={`expertise-metric-tile rounded-xl px-3 py-3 sm:rounded-2xl sm:px-3.5 sm:py-3.5 lg:px-4 lg:py-4 ${
+              className={`expertise-metric-tile rounded-lg px-2.5 py-2.5 sm:rounded-2xl sm:px-3.5 sm:py-3.5 lg:px-4 lg:py-4 ${
                 metricIndex === 0 ? "expertise-metric-tile--primary" : ""
               }`}
               style={{
@@ -161,11 +161,11 @@ const ExpertiseCard = memo(function ExpertiseCard({ card, index }) {
                   : "rgba(0,0,0,0.03)",
               }}
             >
-              <p className="text-[8px] font-bold uppercase leading-tight tracking-[0.14em] text-black/48 sm:text-[9px] sm:tracking-[0.16em]">
+              <p className="text-[7.5px] font-bold uppercase leading-tight tracking-[0.12em] text-black/48 sm:text-[9px] sm:tracking-[0.16em]">
                 {metric.label}
               </p>
               <p
-                className="expertise-metric-value mt-1.5 text-[clamp(1.15rem,4.8vw,1.65rem)] font-semibold leading-none tracking-[-0.04em] text-[#111111] sm:mt-2 sm:text-[clamp(1.25rem,3.2vw,1.85rem)] lg:text-[1.95rem]"
+                className="expertise-metric-value mt-1 text-[clamp(1rem,4.2vw,1.4rem)] font-semibold leading-none tracking-[-0.04em] text-[#111111] sm:mt-2 sm:text-[clamp(1.25rem,3.2vw,1.85rem)] lg:text-[1.95rem]"
                 style={{ fontFamily: "'Syne', sans-serif" }}
               >
                 <MetricCounter value={metric.value} active={isCardActive} />

@@ -124,8 +124,8 @@ body.loader-active {
 }
 
 .expertise-track--snap {
-  --expertise-card-width: min(86vw, 360px);
-  gap: clamp(1rem, 4vw, 2rem);
+  --expertise-card-width: min(76vw, 300px);
+  gap: clamp(0.85rem, 4vw, 2rem);
   padding-left: max(calc(50vw - var(--expertise-card-width) / 2), 1rem);
   padding-right: max(calc(50vw - var(--expertise-card-width) / 2), 1rem);
 }
@@ -145,9 +145,9 @@ body.loader-active {
 }
 
 .expertise-track-card {
-  width: var(--expertise-card-width, min(86vw, 360px));
-  min-height: min(72vh, 520px);
-  max-height: min(78vh, 580px);
+  width: var(--expertise-card-width, min(76vw, 300px));
+  min-height: min(60vh, 430px);
+  max-height: min(68vh, 480px);
 }
 
 @media (min-width: 640px) {

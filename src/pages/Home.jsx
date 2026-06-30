@@ -91,18 +91,29 @@ function fitFontSize(text, maxWidth, { max, min, charWidthRatio }) {
   return Math.min(max, Math.max(min, fitted));
 }
 
+function getLongestWord(text) {
+  return text
+    .split(" ")
+    .reduce((longest, word) => (word.length > longest.length ? word : longest), "");
+}
+
 function getIntroRoleFontSizes(displayText, activeRole, bounds) {
   const { safeInnerWidth, safeInnerHeight, isMobile } = bounds;
-  const roleText = displayText || activeRole;
   const introMax = isMobile ? 22 : 30;
   const introMin = isMobile ? 14 : 17;
-  const roleMax = isMobile ? 28 : 52;
-  const roleMin = isMobile ? 12 : 18;
+  const roleMax = isMobile ? 30 : 56;
+  const roleMin = isMobile ? 14 : 20;
 
-  let roleSize = fitFontSize(roleText, safeInnerWidth, {
+  // The role now renders one word per line, so size it to fit the longest
+  // single word (kept stable via activeRole) instead of the full string. This
+  // keeps the text large and fully inside the ring without ever overlapping
+  // the surrounding image cards.
+  const longestWord = getLongestWord(activeRole || displayText || "");
+
+  let roleSize = fitFontSize(longestWord, safeInnerWidth, {
     max: roleMax,
     min: roleMin,
-    charWidthRatio: 0.56,
+    charWidthRatio: 0.6,
   });
   let introSize = fitFontSize("Hi, I'm", safeInnerWidth, {
     max: introMax,
@@ -110,8 +121,11 @@ function getIntroRoleFontSizes(displayText, activeRole, bounds) {
     charWidthRatio: 0.62,
   });
 
-  const lineGap = isMobile ? 8 : 10;
-  const blockHeight = introSize * 1.2 + lineGap + roleSize * 1.05;
+  const lineGap = isMobile ? 6 : 8;
+  const roleLineGap = isMobile ? 2 : 4;
+  const roleLineCount = 2;
+  const blockHeight =
+    introSize * 1.2 + lineGap + roleSize * 1.1 * roleLineCount + roleLineGap;
 
   if (blockHeight > safeInnerHeight) {
     const scale = safeInnerHeight / blockHeight;
@@ -234,7 +248,7 @@ function FlipCard({
             className="h-full w-full object-cover transition duration-500"
             draggable="false"
             decoding="async"
-            loading={index < 6 ? "eager" : "lazy"}
+            loading="eager"
           />
         </div>
 
@@ -276,6 +290,10 @@ export default function Home({ isActive = true, onReachEnd }) {
     () => getIntroRoleFontSizes(displayText, activeRole, orbitTextBounds),
     [displayText, activeRole, orbitTextBounds]
   );
+  // Render the typed role one word per line (e.g. "Copy" / "Writer") so it never
+  // overflows the ring and overlaps the images. Keep an empty trailing line so
+  // the cursor shows on the next line as soon as a space is typed.
+  const roleWords = displayText.length > 0 ? displayText.split(" ") : [""];
 
   // MOBILE FIX: pick the scroll budget and morph breakpoint based on viewport.
   // Falls back to desktop values until containerSize is measured on first paint.
@@ -283,9 +301,9 @@ export default function Home({ isActive = true, onReachEnd }) {
   const morphBreakpoint = isMobileViewport ? MOBILE_MORPH_BREAKPOINT : DESKTOP_MORPH_BREAKPOINT;
 
   const morphProgress = useTransform(virtualScroll, [0, morphBreakpoint], [0, 1]);
-  const smoothMorph = useSpring(morphProgress, { stiffness: 42, damping: 20 });
+  const smoothMorph = useSpring(morphProgress, { stiffness: 80, damping: 26, mass: 0.5 });
   const scrollRotate = useTransform(virtualScroll, [morphBreakpoint, maxScroll], [0, 360]);
-  const smoothScrollRotate = useSpring(scrollRotate, { stiffness: 38, damping: 20 });
+  const smoothScrollRotate = useSpring(scrollRotate, { stiffness: 72, damping: 24, mass: 0.5 });
   const smoothMouseX = useSpring(mouseX, { stiffness: 30, damping: 22 });
   const contentOpacity = useTransform(smoothMorph, [0.72, 1], [0, 1]);
   const contentY = useTransform(smoothMorph, [0.72, 1], [18, 0]);
@@ -330,6 +348,19 @@ export default function Home({ isActive = true, onReachEnd }) {
       }),
     []
   );
+
+  // PERF: decode every ring image up front (while the loader is still on screen)
+  // so the first scroll doesn't trigger synchronous image decodes on the main
+  // thread, which is the main source of the stutter right after a refresh.
+  useEffect(() => {
+    imageSources.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+      if (typeof img.decode === "function") {
+        img.decode().catch(() => {});
+      }
+    });
+  }, []);
 
   useEffect(() => {
     const element = containerRef.current;
@@ -603,17 +634,24 @@ export default function Home({ isActive = true, onReachEnd }) {
               : { opacity: 0, y: 18, filter: "blur(10px)" }
             }
           transition={{ duration: 0.9, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-2 flex w-full items-center justify-center font-semibold leading-none tracking-normal text-[#151515] sm:mt-2.5"
+          className="mt-2 flex w-full flex-col items-center justify-center font-semibold leading-[1.05] tracking-normal text-[#151515] sm:mt-2.5"
           style={{
             fontFamily: "'Syne', sans-serif",
             fontSize: roleFontSize,
             maxWidth: orbitTextBounds.safeInnerWidth,
           }}
         >
-          <span className="block max-w-full whitespace-nowrap text-center">
-            {displayText}
-            <span className="ml-1 inline-block h-[0.85em] w-[0.09em] translate-y-[0.08em] animate-pulse rounded-sm bg-black" />
-          </span>
+          {roleWords.map((word, wordIndex) => (
+            <span
+              key={wordIndex}
+              className="block max-w-full whitespace-nowrap text-center"
+            >
+              {word}
+              {wordIndex === roleWords.length - 1 && (
+                <span className="ml-1 inline-block h-[0.85em] w-[0.09em] translate-y-[0.08em] animate-pulse rounded-sm bg-black" />
+              )}
+            </span>
+          ))}
         </motion.h1>
       </motion.div>
 
