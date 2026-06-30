@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://sameer-portfolio-dun.vercel.app/sitemap.xml

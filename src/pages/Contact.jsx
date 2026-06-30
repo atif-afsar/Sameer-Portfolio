@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { motion, useScroll, useSpring, useTransform, useVelocity, useAnimationFrame, useMotionValue } from 'framer-motion';
+import Seo from '../components/Seo';
 
 const MARQUEE_TEXT = "LET'S MAKE SOMETHING · SAMEER · ALWAYS ON A TRIP · MELOPHILE · NOMAD · ";
 
@@ -99,6 +100,11 @@ function ContactForm() {
 export default function Contact() {
   return (
     <div id="contact" className="bg-[#efefef] text-black min-h-screen overflow-x-hidden selection:bg-yellow-300">
+      <Seo
+        title="Contact Sameer Shameem | Content Creator & Performance Marketer in Aligarh"
+        description="Get in touch with Sameer Shameem, a content creator and performance marketer based in Aligarh, India, for brand campaigns, Meta & Google Ads, and influencer marketing."
+        path="/contact"
+      />
       {/* Decorative Progress Bar (Left) */}
       <div className="fixed left-0 top-0 w-[1px] h-full bg-black/10 z-50 hidden lg:block" />
 

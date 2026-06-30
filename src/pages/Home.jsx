@@ -22,6 +22,31 @@ const imageSources = [
 
 const totalImages = imageSources.length;
 
+// Descriptive, keyword-aware alt text for each ring visual (helps image SEO
+// without keyword stuffing). Falls back to a generic portfolio description.
+const imageAltMap = {
+  "/images/premier.png": "Adobe Premiere Pro — video editing for content creation",
+  "/images/content.png": "Content creation workflow by Sameer Shameem",
+  "/images/facebook.png": "Facebook Ads for performance marketing campaigns",
+  "/images/gmail.png": "Email marketing outreach",
+  "/images/googleAds.png": "Google Ads performance marketing in Aligarh",
+  "/images/insta.png": "Instagram content and influencer marketing",
+  "/images/meta.png": "Meta Ads management for brand growth",
+  "/images/performance.jpeg": "Performance marketing results and analytics",
+  "/images/sameer1.png": "Sameer Shameem, content creator and performance marketer from Aligarh",
+  "/images/sales.jpeg": "Sales and conversion growth from marketing campaigns",
+  "/images/x.png": "X (Twitter) social media marketing",
+  "/images/youtube.png": "YouTube content creation and video marketing",
+  "/images/image1.png": "Sameer Shameem content creator lifestyle visual",
+  "/images/image2.png": "Sameer Shameem brand campaign visual",
+  "/images/image3.png": "Sameer Shameem content creator portfolio visual",
+  "/images/image4.png": "Sameer Shameem digital marketing portfolio visual",
+};
+
+function getImageAlt(src, index) {
+  return imageAltMap[src] || `Sameer Shameem portfolio visual ${index + 1}`;
+}
+
 // MOBILE FIX: scroll budget is now responsive instead of one fixed value.
 // Desktop keeps the original feel (2600 / 640 split). Mobile gets ~60% of
 // that distance (per request), and the morph breakpoint scales down with it
@@ -244,7 +269,7 @@ function FlipCard({
         >
           <img
             src={src}
-            alt={`Portfolio visual ${index + 1}`}
+            alt={getImageAlt(src, index)}
             className="h-full w-full object-cover transition duration-500"
             draggable="false"
             decoding="async"
@@ -600,6 +625,24 @@ export default function Home({ isActive = true, onReachEnd }) {
       ref={containerRef}
       className="section-scroll-target relative h-screen overflow-hidden bg-[#f7f5ef] text-[#111111]"
     >
+      {/* SEO: real, crawlable text content. Visually hidden but present in the
+          DOM so search engines reliably index the name, role, location and
+          services even though the hero text is animated. */}
+      <div className="sr-only">
+        <h1>
+          Sameer Shameem — Content Creator &amp; Performance Marketer from Aligarh
+        </h1>
+        <p>
+          Sameer Shameem is a content creator and performance marketer based in
+          Aligarh, Uttar Pradesh, India. He helps brands grow through
+          performance marketing on Meta Ads and Google Ads, influencer
+          marketing, social media content creation, and data-driven digital
+          marketing campaigns. Looking for a content creator in Aligarh or a
+          performance marketer in Aligarh? Sameer partners with brands across
+          India and worldwide to turn attention into measurable growth.
+        </p>
+      </div>
+
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(80,126,255,0.14),transparent_28%),radial-gradient(circle_at_86%_20%,rgba(245,168,62,0.16),transparent_30%),linear-gradient(180deg,#f7f5ef_0%,#ece8dd_100%)]" />
       <div className="absolute inset-x-0 top-0 h-28 bg-linear-to-b from-black/10 to-transparent" />
       <div className="absolute inset-x-0 bottom-0 h-32 bg-linear-to-t from-[#f7f5ef] to-transparent" />
@@ -626,7 +669,7 @@ export default function Home({ isActive = true, onReachEnd }) {
         >
           Hi, I'm
         </motion.p>
-        <motion.h1
+        <motion.p
           initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
           animate={
             introPhase === "circle"
@@ -652,7 +695,7 @@ export default function Home({ isActive = true, onReachEnd }) {
               )}
             </span>
           ))}
-        </motion.h1>
+        </motion.p>
       </motion.div>
 
       <motion.div

@@ -7,6 +7,7 @@ import ReelsSection from "../pages/ReelsSection";
 import PerformanceSection from "../pages/PerformanceSection";
 import ExperienceSection from "../pages/ExperienceSection";
 import Anime from "../pages/Anime";
+import Seo from "./Seo";
 import { expertiseSections } from "../data/expertiseData";
 import {
   ANIME_PANEL_INDEX,
@@ -131,6 +132,11 @@ export default function HorizontalPageShell() {
 
   return (
     <div className="fixed inset-0 z-0 overflow-hidden bg-[#f7f5ef]">
+      <Seo
+        title="Sameer Shameem | Content Creator & Performance Marketer in Aligarh"
+        description="Sameer Shameem is a content creator and performance marketer in Aligarh, India, helping brands grow with Meta & Google Ads, influencer marketing, and digital storytelling."
+        path="/"
+      />
       <motion.div
         className="flex h-full will-change-transform"
         style={{ width: `${PANEL_COUNT * 100}vw`, x: trackX }}
