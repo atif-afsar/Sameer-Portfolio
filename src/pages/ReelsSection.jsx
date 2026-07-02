@@ -191,8 +191,10 @@ export default function ReelsSection({ isActive = true, onReachStart, onReachEnd
     snapRef
   );
 
+  // Keep the intro layer mounted until the heading has fully crossfaded into the
+  // track (0.44) so its fade-out isn't cut off, which used to leave a blank gap.
   const introLayerVisibility = useTransform(smoothProgress, (value) =>
-    value > INTRO_PHASE_END + 0.02 ? "hidden" : "visible"
+    value > 0.44 ? "hidden" : "visible"
   );
 
   // PERF: stop the infinite bubble animations once the intro is scrolled away so
@@ -205,11 +207,13 @@ export default function ReelsSection({ isActive = true, onReachStart, onReachEnd
   }, [smoothProgress]);
 
   const bubbleOpacity = useTransform(introProgress, [0, 0.15, 0.75, 1], [1, 1, 0.35, 0]);
-  const headingScale = useTransform(introProgress, [0, 0.35, 0.72, 1], [1, 1, 1.28, 1.55]);
-  const headingOpacity = useTransform(introProgress, [0, 0.3, 0.68, 1], [1, 1, 0.45, 0]);
-  const headingBlur = useTransform(introProgress, [0, 0.5, 1], [0, 0, 12]);
+  // Driven off smoothProgress (not introProgress) so the heading fade overlaps the
+  // track fade-in at the phase boundary (~0.34) — no long blank/white zoom gap.
+  const headingScale = useTransform(smoothProgress, [0, 0.3], [1, 1.5]);
+  const headingOpacity = useTransform(smoothProgress, [0.18, 0.4], [1, 0]);
+  const headingBlur = useTransform(smoothProgress, [0.18, 0.4], [0, 12]);
   const headingFilter = useTransform(headingBlur, (blur) => `blur(${blur}px)`);
-  const introHintOpacity = useTransform(introProgress, [0, 0.12, 0.55, 0.85], [0, 1, 0.55, 0]);
+  const introHintOpacity = useTransform(introProgress, [0, 0.12, 0.45, 0.65], [0, 1, 0.55, 0]);
 
   return (
     <section

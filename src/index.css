@@ -156,8 +156,10 @@ body.loader-active {
 
 .expertise-track-card {
   width: var(--expertise-card-width, min(70vw, 258px));
-  min-height: min(54vh, 392px);
-  max-height: min(62vh, 440px);
+  /* MOBILE: hug the content so cards don't leave a big blank middle. Desktop
+     keeps its taller fixed size via the sm/lg overrides below. */
+  min-height: 0;
+  max-height: min(72vh, 500px);
   /* Isolate each card's paint so translating the track composites cheaply and a
      single card's repaint (e.g. metric counter) never invalidates the whole
      wide track texture. This is the main anti-jank fix for horizontal browsing. */

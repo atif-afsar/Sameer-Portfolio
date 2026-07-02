@@ -63,6 +63,7 @@ const MOBILE_MORPH_BREAKPOINT = Math.round(DESKTOP_MORPH_BREAKPOINT * 0.6); // ~
 // a new position in a single frame. Capping this keeps motion smooth without
 // changing how a normal swipe feels.
 const MAX_SCROLL_STEP = 120;
+const HEADLINE_TEXT = "Stories shaped for attention.";
 
 const lerp = (start, end, amount) => start * (1 - amount) + end * amount;
 
@@ -122,51 +123,47 @@ function getLongestWord(text) {
     .reduce((longest, word) => (word.length > longest.length ? word : longest), "");
 }
 
-function getIntroRoleFontSizes(displayText, activeRole, bounds) {
+function getCenterRoleFontSizes(displayText, activeRole, bounds) {
   const { safeInnerWidth, safeInnerHeight, isMobile } = bounds;
-  const introMax = isMobile ? 22 : 30;
-  const introMin = isMobile ? 14 : 17;
-  const roleMax = isMobile ? 30 : 56;
-  const roleMin = isMobile ? 14 : 20;
+  const iamMax = isMobile ? 15 : 18;
+  const iamMin = isMobile ? 11 : 13;
+  const roleMax = isMobile ? 26 : 44;
+  const roleMin = isMobile ? 13 : 18;
 
-  // The role now renders one word per line, so size it to fit the longest
-  // single word (kept stable via activeRole) instead of the full string. This
-  // keeps the text large and fully inside the ring without ever overlapping
-  // the surrounding image cards.
   const longestWord = getLongestWord(activeRole || displayText || "");
 
   let roleSize = fitFontSize(longestWord, safeInnerWidth, {
     max: roleMax,
     min: roleMin,
-    charWidthRatio: 0.6,
+    charWidthRatio: 0.58,
   });
-  let introSize = fitFontSize("Hi, I'm", safeInnerWidth, {
-    max: introMax,
-    min: introMin,
+  let iamSize = fitFontSize("I am", safeInnerWidth, {
+    max: iamMax,
+    min: iamMin,
     charWidthRatio: 0.62,
   });
 
-  const lineGap = isMobile ? 6 : 8;
-  const roleLineGap = isMobile ? 2 : 4;
+  const helloSize = isMobile ? 40 : 52;
+  const lineGap = isMobile ? 4 : 6;
   const roleLineCount = 2;
   const blockHeight =
-    introSize * 1.2 + lineGap + roleSize * 1.1 * roleLineCount + roleLineGap;
+    helloSize + lineGap + iamSize * 1.2 + lineGap + roleSize * 1.1 * roleLineCount;
 
   if (blockHeight > safeInnerHeight) {
     const scale = safeInnerHeight / blockHeight;
     roleSize = Math.max(roleMin, roleSize * scale);
-    introSize = Math.max(introMin, introSize * scale);
+    iamSize = Math.max(iamMin, iamSize * scale);
   }
 
   return {
-    introFontSize: `${introSize}px`,
+    iamFontSize: `${iamSize}px`,
     roleFontSize: `${roleSize}px`,
   };
 }
 
 const roles = [
-  "Digital Marketer",
   "Content Creator",
+  "Digital Marketing Specialist",
   "Performance Marketer",
   "Growth Strategist",
   "Copy Writer",
@@ -340,13 +337,10 @@ export default function Home({ isActive = true, onReachEnd }) {
     () => getOrbitTextBounds(containerSize.width, containerSize.height),
     [containerSize.width, containerSize.height]
   );
-  const { introFontSize, roleFontSize } = useMemo(
-    () => getIntroRoleFontSizes(displayText, activeRole, orbitTextBounds),
+  const { iamFontSize, roleFontSize } = useMemo(
+    () => getCenterRoleFontSizes(displayText, activeRole, orbitTextBounds),
     [displayText, activeRole, orbitTextBounds]
   );
-  // Render the typed role one word per line (e.g. "Copy" / "Writer") so it never
-  // overflows the ring and overlaps the images. Keep an empty trailing line so
-  // the cursor shows on the next line as soon as a space is typed.
   const roleWords = displayText.length > 0 ? displayText.split(" ") : [""];
 
   // MOBILE FIX: pick the scroll budget and morph breakpoint based on viewport.
@@ -359,9 +353,14 @@ export default function Home({ isActive = true, onReachEnd }) {
   const scrollRotate = useTransform(virtualScroll, [morphBreakpoint, maxScroll], [0, 360]);
   const smoothScrollRotate = useSpring(scrollRotate, { stiffness: 72, damping: 24, mass: 0.5 });
   const smoothMouseX = useSpring(mouseX, { stiffness: 30, damping: 22 });
-  const contentOpacity = useTransform(smoothMorph, [0.72, 1], [0, 1]);
-  const contentY = useTransform(smoothMorph, [0.72, 1], [18, 0]);
-  const introOpacity = useTransform(smoothMorph, [0, 0.55], [1, 0]);
+  // Reveal the headline block earlier so scrolling never feels like a blank page.
+  const contentOpacity = useTransform(smoothMorph, [0.42, 0.72], [0, 1]);
+  const contentY = useTransform(smoothMorph, [0.42, 0.72], [18, 0]);
+  const introOpacity = useTransform(smoothMorph, [0, 0.62], [1, 0]);
+  // Fills the middle blank zone once Hello/roles fade and before the arc fully opens.
+  const glanceOpacity = useTransform(smoothMorph, [0.5, 0.66, 0.9, 1], [0, 1, 1, 0.8]);
+  const glanceY = useTransform(smoothMorph, [0.5, 0.66], [14, 0]);
+  const glanceScale = useTransform(smoothMorph, [0.5, 0.66], [0.96, 1]);
 
   // PERF: entrance choreography (scatter -> line -> circle) is driven by two
   // spring motion values instead of per-card `animate` props, so the cards
@@ -681,57 +680,6 @@ export default function Home({ isActive = true, onReachEnd }) {
       <div className="absolute inset-x-0 bottom-0 h-32 bg-linear-to-t from-[#f7f5ef] to-transparent" />
 
       <motion.div
-        className="pointer-events-none absolute left-1/2 top-[50%] z-30 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center text-center"
-        style={{
-          opacity: introOpacity,
-          width: orbitTextBounds.safeInnerWidth,
-          maxWidth: orbitTextBounds.safeInnerWidth,
-          maxHeight: orbitTextBounds.safeInnerHeight,
-        }}
-      >
-        <motion.p
-          initial={{ opacity: 0, y: 14, filter: "blur(8px)" }}
-          animate={
-            introPhase === "circle"
-              ? { opacity: 1, y: 0, filter: "blur(0px)" }
-              : { opacity: 0, y: 14, filter: "blur(8px)" }
-          }
-          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-          className="block w-full whitespace-nowrap font-semibold leading-none tracking-normal text-black/55"
-          style={{ fontSize: introFontSize }}
-        >
-          Hi, I'm
-        </motion.p>
-        <motion.p
-          initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
-          animate={
-            introPhase === "circle"
-              ? { opacity: 1, y: 0, filter: "blur(0px)" }
-              : { opacity: 0, y: 18, filter: "blur(10px)" }
-            }
-          transition={{ duration: 0.9, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-2 flex w-full flex-col items-center justify-center font-semibold leading-[1.05] tracking-normal text-[#151515] sm:mt-2.5"
-          style={{
-            fontFamily: "'Syne', sans-serif",
-            fontSize: roleFontSize,
-            maxWidth: orbitTextBounds.safeInnerWidth,
-          }}
-        >
-          {roleWords.map((word, wordIndex) => (
-            <span
-              key={wordIndex}
-              className="block max-w-full whitespace-nowrap text-center"
-            >
-              {word}
-              {wordIndex === roleWords.length - 1 && (
-                <span className="ml-1 inline-block h-[0.85em] w-[0.09em] translate-y-[0.08em] animate-pulse rounded-sm bg-black" />
-              )}
-            </span>
-          ))}
-        </motion.p>
-      </motion.div>
-
-      <motion.div
         style={{ opacity: contentOpacity, y: contentY }}
         className="pointer-events-none absolute left-1/2 top-[13%] z-20 flex w-full max-w-[760px] -translate-x-1/2 flex-col items-center px-5 text-center sm:top-[12%]"
       >
@@ -742,7 +690,7 @@ export default function Home({ isActive = true, onReachEnd }) {
           className="mt-3 text-[clamp(34px,8vw,78px)] font-medium leading-[0.95] tracking-normal text-black"
           style={{ fontFamily: "'Syne', sans-serif" }}
         >
-          Stories shaped for attention.
+          {HEADLINE_TEXT}
         </h2>
         <p className="mt-4 max-w-[560px] text-[14px] leading-[1.6] text-black/60 sm:text-[16px]">
           Social-first visuals, brand campaigns, and digital growth work presented as a living editorial reel.
@@ -751,6 +699,110 @@ export default function Home({ isActive = true, onReachEnd }) {
 
       <div className="relative z-10 flex h-screen w-full items-center justify-center px-4 pt-20 sm:px-6 lg:px-10">
         <div className="relative flex h-screen w-full max-w-[1320px] items-center justify-center">
+          <motion.div
+            className="pointer-events-none absolute left-1/2 top-1/2 z-30 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center text-center"
+            style={{
+              opacity: introOpacity,
+              width: orbitTextBounds.safeInnerWidth,
+              maxWidth: orbitTextBounds.safeInnerWidth,
+              maxHeight: orbitTextBounds.safeInnerHeight,
+            }}
+          >
+            <motion.p
+              initial={{ opacity: 0, y: 10, filter: "blur(8px)" }}
+              animate={
+                introPhase === "circle"
+                  ? { opacity: 1, y: 0, filter: "blur(0px)" }
+                  : { opacity: 0, y: 10, filter: "blur(8px)" }
+              }
+              transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
+              className="pt-4 text-[clamp(2.5rem,10vw,4.25rem)] font-bold leading-none tracking-[-0.03em] text-[#111111] sm:pt-5"
+              style={{ fontFamily: "'Syne', sans-serif" }}
+            >
+              Hello
+            </motion.p>
+
+            <motion.p
+              initial={{ opacity: 0, y: 10, filter: "blur(6px)" }}
+              animate={
+                introPhase === "circle"
+                  ? { opacity: 1, y: 0, filter: "blur(0px)" }
+                  : { opacity: 0, y: 10, filter: "blur(6px)" }
+              }
+              transition={{ duration: 0.8, delay: 0.06, ease: [0.22, 1, 0.36, 1] }}
+              className="mt-2 font-medium leading-none tracking-[0.08em] text-black/50"
+              style={{ fontSize: iamFontSize, fontFamily: "'Outfit', sans-serif" }}
+            >
+              I am
+            </motion.p>
+
+            <motion.p
+              initial={{ opacity: 0, y: 12, filter: "blur(8px)" }}
+              animate={
+                introPhase === "circle"
+                  ? { opacity: 1, y: 0, filter: "blur(0px)" }
+                  : { opacity: 0, y: 12, filter: "blur(8px)" }
+              }
+              transition={{ duration: 0.9, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+              className="mt-2 flex w-full flex-col items-center justify-center font-semibold leading-[1.05] tracking-normal text-[#151515]"
+              style={{
+                fontFamily: "'Syne', sans-serif",
+                fontSize: roleFontSize,
+                maxWidth: orbitTextBounds.safeInnerWidth,
+              }}
+            >
+              {roleWords.map((word, wordIndex) => (
+                <span
+                  key={wordIndex}
+                  className="block max-w-full whitespace-nowrap text-center"
+                >
+                  {word}
+                  {wordIndex === roleWords.length - 1 && (
+                    <span className="ml-1 inline-block h-[0.85em] w-[0.09em] translate-y-[0.08em] animate-pulse rounded-sm bg-black" />
+                  )}
+                </span>
+              ))}
+            </motion.p>
+          </motion.div>
+
+          <motion.div
+            className="pointer-events-none absolute left-1/2 top-1/2 z-20 flex w-full max-w-[min(92vw,520px)] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center px-4 text-center sm:px-6"
+            style={{
+              opacity: glanceOpacity,
+              y: glanceY,
+              scale: glanceScale,
+            }}
+          >
+            <p
+              className="text-[clamp(1.65rem,7.2vw,3.25rem)] font-semibold leading-[1.05] tracking-[-0.03em] text-[#111111] sm:text-[clamp(2rem,5.5vw,3.5rem)]"
+              style={{ fontFamily: "'Syne', sans-serif" }}
+            >
+              <span className="block">Lets Have a</span>
+              <span
+                className="mt-1 block text-[clamp(1.85rem,8vw,3.75rem)] font-normal italic leading-[0.95] text-[#1a1a1a] sm:mt-1.5"
+                style={{ fontFamily: "'Cormorant Garamond', serif" }}
+              >
+                Glance
+              </span>
+            </p>
+
+            <motion.svg
+              viewBox="0 0 24 24"
+              className="mt-5 h-6 w-6 text-[#111111] sm:mt-6 sm:h-7 sm:w-7"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+              animate={{ x: [0, 8, 0] }}
+              transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <path d="M5 12h14" />
+              <path d="m13 6 6 6-6 6" />
+            </motion.svg>
+          </motion.div>
+
           {imageSources.map((src, index) => (
             <MemoFlipCard
               key={`${src}-${index}`}

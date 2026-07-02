@@ -89,17 +89,18 @@ function FloatingBubbles({ opacity, active = true }) {
 
 const ExpertiseCard = memo(function ExpertiseCard({ card, index }) {
   const cardRef = useRef(null);
-  const isCardActive = useInView(cardRef, { once: true, amount: 0.45 });
+  // Lower threshold so a single scroll that brings the card in reveals it AND
+  // starts its number counters right away (was 0.45, which needed extra scroll).
+  const isCardActive = useInView(cardRef, { once: true, amount: 0.15 });
 
   return (
     <motion.article
       ref={cardRef}
-      initial={{ opacity: 0, y: 28 }}
+      initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.3 }}
+      viewport={{ once: true, amount: 0.15 }}
       transition={{
-        duration: 0.6,
-        delay: index * 0.04,
+        duration: 0.5,
         ease: [0.22, 1, 0.36, 1],
       }}
       className="expertise-track-card group relative flex shrink-0 flex-col overflow-hidden rounded-[1.35rem] border border-black/[0.07] bg-white shadow-[0_24px_60px_rgba(0,0,0,0.09)] transition-[transform,box-shadow] duration-500 hover:-translate-y-1 hover:shadow-[0_32px_72px_rgba(0,0,0,0.12)] sm:rounded-[1.65rem] lg:rounded-[1.75rem]"
@@ -118,7 +119,7 @@ const ExpertiseCard = memo(function ExpertiseCard({ card, index }) {
         }}
       />
 
-      <div className="relative flex flex-1 flex-col p-3.5 sm:p-5 lg:p-6">
+      <div className="relative flex flex-1 flex-col justify-center gap-3 p-3.5 sm:gap-4 sm:p-5 lg:p-6">
         <div className="flex items-start justify-between gap-3">
           <span className="inline-flex max-w-[75%] items-center rounded-full border border-black/10 bg-white/80 px-2.5 py-1 text-[8px] font-bold uppercase tracking-[0.18em] text-black/55 backdrop-blur-sm sm:px-3 sm:text-[9px] sm:tracking-[0.22em]">
             {card.tag}
@@ -131,7 +132,7 @@ const ExpertiseCard = memo(function ExpertiseCard({ card, index }) {
           </span>
         </div>
 
-        <div className="relative mt-3 flex items-center gap-3 sm:mt-5 sm:gap-4">
+        <div className="relative flex items-center gap-3 sm:gap-4">
           <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#f4f2eb] ring-1 ring-black/[0.06] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] sm:h-16 sm:w-16 sm:rounded-2xl lg:h-[72px] lg:w-[72px]">
             <img
               src={card.image}
@@ -150,15 +151,15 @@ const ExpertiseCard = memo(function ExpertiseCard({ card, index }) {
           </h3>
         </div>
 
-        <p className="relative mt-3 line-clamp-3 text-[11.5px] leading-[1.55] text-black/58 sm:mt-4 sm:line-clamp-none sm:text-[13.5px] lg:text-[14.5px] lg:leading-[1.7]">
+        <p className="relative line-clamp-3 text-[11.5px] leading-[1.55] text-black/58 sm:line-clamp-none sm:text-[13.5px] lg:text-[14.5px] lg:leading-[1.7]">
           {card.description}
         </p>
 
-        <div className="relative mt-auto grid grid-cols-2 gap-2 pt-3.5 sm:gap-2.5 sm:pt-5 lg:gap-3 lg:pt-6">
+        <div className="relative grid grid-cols-2 gap-2 sm:gap-2.5 lg:gap-3">
           {card.metrics.map((metric, metricIndex) => (
             <div
               key={metric.label}
-              className={`expertise-metric-tile rounded-lg px-2.5 py-2.5 sm:rounded-2xl sm:px-3.5 sm:py-3.5 lg:px-4 lg:py-4 ${
+              className={`expertise-metric-tile flex flex-col items-center justify-center rounded-lg px-2.5 py-2.5 text-center sm:rounded-2xl sm:px-3.5 sm:py-3.5 lg:px-4 lg:py-4 ${
                 metricIndex === 0 ? "expertise-metric-tile--primary" : ""
               }`}
               style={{
@@ -171,7 +172,7 @@ const ExpertiseCard = memo(function ExpertiseCard({ card, index }) {
                 {metric.label}
               </p>
               <p
-                className="expertise-metric-value mt-1 text-[clamp(1rem,4.2vw,1.4rem)] font-semibold leading-none tracking-[-0.04em] text-[#111111] sm:mt-2 sm:text-[clamp(1.25rem,3.2vw,1.85rem)] lg:text-[1.95rem]"
+                className="expertise-metric-value mt-1 text-center text-[clamp(1rem,4.2vw,1.4rem)] font-semibold leading-none tracking-[-0.04em] text-[#111111] sm:mt-2 sm:text-[clamp(1.25rem,3.2vw,1.85rem)] lg:text-[1.95rem]"
                 style={{ fontFamily: "'Syne', sans-serif" }}
               >
                 <MetricCounter value={metric.value} active={isCardActive} />
@@ -207,7 +208,7 @@ export default function ExpertiseSection({
   } = useSectionScroll({ isActive, onReachStart, onReachEnd });
 
   const introLayerVisibility = useTransform(smoothProgress, (value) =>
-    value > INTRO_PHASE_END + 0.02 ? "hidden" : "visible"
+    value > 0.44 ? "hidden" : "visible"
   );
 
   // PERF: once the user scrolls past the intro (i.e. is browsing the cards) the
@@ -227,9 +228,11 @@ export default function ExpertiseSection({
   );
 
   const bubbleOpacity = useTransform(introProgress, [0, 0.15, 0.75, 1], [1, 1, 0.35, 0]);
-  const headingScale = useTransform(introProgress, [0, 0.35, 0.72, 1], [1, 1, 1.26, 1.5]);
-  const headingOpacity = useTransform(introProgress, [0, 0.3, 0.68, 1], [1, 1, 0.45, 0]);
-  const headingBlur = useTransform(introProgress, [0, 0.5, 1], [0, 0, 10]);
+  // Driven off smoothProgress so the heading fade overlaps the track fade-in at the
+  // phase boundary (~0.34) instead of leaving a long blank/white gap while zooming.
+  const headingScale = useTransform(smoothProgress, [0, 0.3], [1, 1.45]);
+  const headingOpacity = useTransform(smoothProgress, [0.18, 0.4], [1, 0]);
+  const headingBlur = useTransform(smoothProgress, [0.18, 0.4], [0, 10]);
   const headingFilter = useTransform(headingBlur, (blur) => `blur(${blur}px)`);
   const introHintOpacity = useTransform(introProgress, [0, 0.12, 0.55, 0.85], [0, 1, 0.55, 0]);
 

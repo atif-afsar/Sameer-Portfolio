@@ -216,7 +216,10 @@ function interpolateSnapOffsets(offsets, scrollPortion) {
 }
 
 export function useSnapTrackMotion(trackProgress, snapRef, { enterEnd = 0.2 } = {}) {
-  const trackLayerOpacity = useTransform(trackProgress, [0, 0.18, 0.32, 1], [0, 0, 1, 1]);
+  // Ramp the track in immediately at the phase boundary so it crossfades with the
+  // fading intro heading — otherwise there is a long blank/white gap between the
+  // zoomed heading disappearing and the cards appearing.
+  const trackLayerOpacity = useTransform(trackProgress, [0, 0.1], [0, 1]);
   const trackEnterX = useTransform(trackProgress, [0, enterEnd, 1], [72, 0, 0]);
   const trackScrollX = useTransform(trackProgress, (value) => {
     const { offsets } = snapRef.current;
