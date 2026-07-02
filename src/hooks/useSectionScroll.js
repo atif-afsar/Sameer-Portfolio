@@ -13,8 +13,12 @@ function getInputConfig() {
   // advance gradually instead of flashing past in a single swipe/flick. Mobile
   // keeps a slightly higher feel so a normal swipe still makes clear progress.
   // Tuned slower so each section/card has time to render fully while scrolling.
+  // MOBILE PERF: the previous per-event cap (0.028) let a single touchmove jump
+  // ~3% of the whole section, which the spring then chased in a burst -> the
+  // "content moves too fast / frames drop" feel. Smaller cap = smoother, evenly
+  // paced motion that stays on the compositor.
   return isMobile
-    ? { scrollMultiplier: 0.0013, maxScrollStep: 0.028, touchMultiplier: 1.05 }
+    ? { scrollMultiplier: 0.00105, maxScrollStep: 0.017, touchMultiplier: 0.9 }
     : { scrollMultiplier: 0.00062, maxScrollStep: 0.016, touchMultiplier: 0.85 };
 }
 

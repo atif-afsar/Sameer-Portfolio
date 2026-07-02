@@ -1,4 +1,4 @@
-import { memo, useMemo, useRef } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { motion, useInView, useTransform } from "framer-motion";
 import MetricCounter from "./MetricCounter";
 import {
@@ -24,10 +24,16 @@ const bubblePalette = [
   "rgba(245,168,62,0.1)",
 ];
 
+// MOBILE PERF: fewer infinitely-animating bubbles on phones (desktop unchanged).
+const isMobileDevice =
+  typeof window !== "undefined" &&
+  (window.matchMedia("(pointer: coarse)").matches ||
+    window.matchMedia("(max-width: 767px)").matches);
+
 function FloatingBubbles({ opacity, active = true }) {
   const bubbles = useMemo(
     () =>
-      Array.from({ length: 14 }, (_, index) => ({
+      Array.from({ length: isMobileDevice ? 6 : 14 }, (_, index) => ({
         id: index,
         size: 34 + (index % 6) * 20,
         left: `${5 + ((index * 21) % 90)}%`,
@@ -204,6 +210,16 @@ export default function ExpertiseSection({
     value > INTRO_PHASE_END + 0.02 ? "hidden" : "visible"
   );
 
+  // PERF: once the user scrolls past the intro (i.e. is browsing the cards) the
+  // decorative bubbles are hidden anyway, so stop their infinite animations to
+  // free up frames for smooth horizontal card scrolling.
+  const [introOnScreen, setIntroOnScreen] = useState(true);
+  useEffect(() => {
+    const update = (value) => setIntroOnScreen(value <= INTRO_PHASE_END + 0.04);
+    update(smoothProgress.get());
+    return smoothProgress.on("change", update);
+  }, [smoothProgress]);
+
   const snapRef = useMeasureSnapTrack(trackRef, trackViewportRef, ".expertise-track-card", cards.length);
   const { trackLayerOpacity, trackX, browseHintOpacity } = useSnapTrackMotion(
     trackProgress,
@@ -256,7 +272,7 @@ export default function ExpertiseSection({
         style={{ visibility: introLayerVisibility }}
         className="pointer-events-none absolute inset-0 z-30"
       >
-        <FloatingBubbles opacity={bubbleOpacity} active={isActive} />
+        <FloatingBubbles opacity={bubbleOpacity} active={isActive && introOnScreen} />
 
         <div className="flex h-full items-center justify-center px-5 pt-14 sm:px-8 sm:pt-16">
           <motion.div

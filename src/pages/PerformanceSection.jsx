@@ -15,10 +15,16 @@ const panelBackground = (
   </>
 );
 
+// MOBILE PERF: fewer infinitely-animating bubbles on phones (desktop unchanged).
+const isMobileDevice =
+  typeof window !== "undefined" &&
+  (window.matchMedia("(pointer: coarse)").matches ||
+    window.matchMedia("(max-width: 767px)").matches);
+
 function FloatingBubbles({ opacity, active = true }) {
   const bubbles = useMemo(
     () =>
-      Array.from({ length: 12 }, (_, index) => ({
+      Array.from({ length: isMobileDevice ? 6 : 12 }, (_, index) => ({
         id: index,
         size: 32 + (index % 5) * 18,
         left: `${8 + ((index * 23) % 84)}%`,
@@ -148,6 +154,15 @@ export default function PerformanceSection({
     v > INTRO_PHASE_END + 0.02 ? "hidden" : "visible"
   );
 
+  // PERF: halt the infinite bubble animations once the intro is gone so the
+  // card zoom / metrics scrolling stays smooth.
+  const [introOnScreen, setIntroOnScreen] = useState(true);
+  useEffect(() => {
+    const update = (value) => setIntroOnScreen(value <= INTRO_PHASE_END + 0.04);
+    update(smoothProgress.get());
+    return smoothProgress.on("change", update);
+  }, [smoothProgress]);
+
   const cardOpacity = useTransform(trackProgress, [0, 0.1, 0.42, 0.72, 1], [0, 1, 1, 0.25, 0]);
   const cardScale = useTransform(trackProgress, [0, 0.12, 0.5, 0.78, 1], [0.84, 1, 1.32, 1.48, 1.55]);
   const cardBlur = useTransform(trackProgress, [0.45, 0.75, 1], [0, 6, 12]);
@@ -235,7 +250,7 @@ export default function PerformanceSection({
         style={{ visibility: introLayerVisibility }}
         className="pointer-events-none absolute inset-0 z-30"
       >
-        <FloatingBubbles opacity={bubbleOpacity} active={isActive} />
+        <FloatingBubbles opacity={bubbleOpacity} active={isActive && introOnScreen} />
 
         <div className="flex h-full items-center justify-center px-5 pt-14 sm:px-8 sm:pt-16">
           <motion.div

@@ -1,8 +1,14 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, useTransform } from "framer-motion";
 import { MinimalExperienceCounter } from "../components/LiveExperienceCounter";
 import { CAREER_START } from "../data/experienceData";
 import { useSectionScroll } from "../hooks/useSectionScroll";
+
+// MOBILE PERF: fewer infinitely-animating bubbles on phones (desktop unchanged).
+const isMobileDevice =
+  typeof window !== "undefined" &&
+  (window.matchMedia("(pointer: coarse)").matches ||
+    window.matchMedia("(max-width: 767px)").matches);
 
 const panelBackground = (
   <>
@@ -37,9 +43,17 @@ export default function ExperienceSection({
     value > 0.35 ? "hidden" : "visible"
   );
 
+  // PERF: stop the infinite bubble animations once the live clock takes over.
+  const [introOnScreen, setIntroOnScreen] = useState(true);
+  useEffect(() => {
+    const update = (value) => setIntroOnScreen(value <= 0.4);
+    update(trackProgress.get());
+    return trackProgress.on("change", update);
+  }, [trackProgress]);
+
   const bubbles = useMemo(
     () =>
-      Array.from({ length: 10 }, (_, index) => ({
+      Array.from({ length: isMobileDevice ? 5 : 10 }, (_, index) => ({
         id: index,
         size: 28 + (index % 4) * 16,
         left: `${10 + ((index * 27) % 80)}%`,
@@ -91,7 +105,7 @@ export default function ExperienceSection({
                 top: bubble.top,
               }}
               animate={
-                isActive
+                isActive && introOnScreen
                   ? {
                       y: [0, -14, 0],
                       opacity: [0.2, 0.38, 0.2],

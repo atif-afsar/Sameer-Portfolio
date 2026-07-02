@@ -172,6 +172,15 @@ const roles = [
   "Copy Writer",
 ];
 
+// MOBILE PERF: the hover flip (back face + 3D context) can never trigger on a
+// touch device, so on phones we render a lighter front-only card. That removes
+// 16 offscreen back-face layers and 16 preserve-3d contexts from the compositor
+// while looking identical to a mobile user. Desktop keeps the full flip.
+const isMobileDevice =
+  typeof window !== "undefined" &&
+  (window.matchMedia("(pointer: coarse)").matches ||
+    window.matchMedia("(max-width: 767px)").matches);
+
 // PERF: card geometry is computed off the React render path. This pure helper
 // takes the live spring values (morph / rotate / parallax) plus the entrance
 // progress values and returns the final transform for a single card. It is
@@ -245,6 +254,26 @@ function FlipCard({
     (s) => `translate3d(${s.x}px, ${s.y}px, 0) rotate(${s.rot}deg) scale(${s.scale})`
   );
   const opacity = useTransform(state, (s) => s.opacity);
+
+  if (isMobileDevice) {
+    return (
+      <motion.div
+        className="absolute h-[76px] w-[54px] sm:h-[86px] sm:w-[62px] lg:h-[98px] lg:w-[70px]"
+        style={{ transform, opacity, willChange: "transform, opacity" }}
+      >
+        <div className="h-full w-full overflow-hidden rounded-[8px] bg-zinc-200 shadow-[0_18px_38px_rgba(0,0,0,0.22)] ring-1 ring-black/10">
+          <img
+            src={src}
+            alt={getImageAlt(src, index)}
+            className="h-full w-full object-cover"
+            draggable="false"
+            decoding="async"
+            loading="eager"
+          />
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -498,16 +527,20 @@ export default function Home({ isActive = true, onReachEnd }) {
       }, BOUNDARY_COOLDOWN_MS);
     };
 
+    // MOBILE PERF: 2.8x multiplier + 200px per-event cap made a light swipe fling
+    // the whole hero morph in one or two frames (looked "too fast" and dropped
+    // frames as the springs snapped). A gentler multiplier and smaller cap give
+    // an evenly paced, smooth morph that the springs can keep up with.
     const getTouchMultiplier = () =>
       window.matchMedia("(pointer: coarse)").matches ||
       window.matchMedia("(max-width: 767px)").matches
-        ? 2.8
+        ? 1.6
         : 1;
 
     const getMaxStep = () =>
       window.matchMedia("(pointer: coarse)").matches ||
       window.matchMedia("(max-width: 767px)").matches
-        ? 200
+        ? 95
         : MAX_SCROLL_STEP;
 
     const applyScroll = (deltaY) => {

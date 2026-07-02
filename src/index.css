@@ -37,7 +37,9 @@ body.loader-active {
 }
 
 .reel-track--snap {
-  --reel-card-width: min(84vw, 320px);
+  /* MOBILE: smaller default card so the reel + video frame is not oversized on
+     phones. Desktop keeps its size via the sm/lg overrides below. */
+  --reel-card-width: min(62vw, 228px);
   gap: clamp(1rem, 4vw, 2rem);
   padding-left: max(calc(50vw - var(--reel-card-width) / 2), 0.75rem);
   padding-right: max(calc(50vw - var(--reel-card-width) / 2), 0.75rem);
@@ -56,7 +58,7 @@ body.loader-active {
 }
 
 .reel-card {
-  width: var(--reel-card-width, min(84vw, 320px));
+  width: var(--reel-card-width, min(62vw, 228px));
 }
 
 .section-track-viewport {
@@ -82,7 +84,8 @@ body.loader-active {
   justify-content: center;
   aspect-ratio: 9 / 16;
   width: 100%;
-  max-height: min(72vh, 620px);
+  /* MOBILE: keep the video frame compact. Desktop restores the taller frame. */
+  max-height: min(56vh, 420px);
   overflow: hidden;
   border-radius: 1.25rem;
   background: #0a0a0a;
@@ -90,6 +93,12 @@ body.loader-active {
   border: 1px solid rgba(0, 0, 0, 0.08);
   transform: translate3d(0, 0, 0);
   contain: layout paint;
+}
+
+@media (min-width: 640px) {
+  .reel-card-inner {
+    max-height: min(72vh, 620px);
+  }
 }
 
 .reel-card-video {
@@ -124,7 +133,8 @@ body.loader-active {
 }
 
 .expertise-track--snap {
-  --expertise-card-width: min(76vw, 300px);
+  /* MOBILE: smaller default card; desktop keeps its width via sm/lg below. */
+  --expertise-card-width: min(70vw, 258px);
   gap: clamp(0.85rem, 4vw, 2rem);
   padding-left: max(calc(50vw - var(--expertise-card-width) / 2), 1rem);
   padding-right: max(calc(50vw - var(--expertise-card-width) / 2), 1rem);
@@ -145,9 +155,15 @@ body.loader-active {
 }
 
 .expertise-track-card {
-  width: var(--expertise-card-width, min(76vw, 300px));
-  min-height: min(60vh, 430px);
-  max-height: min(68vh, 480px);
+  width: var(--expertise-card-width, min(70vw, 258px));
+  min-height: min(54vh, 392px);
+  max-height: min(62vh, 440px);
+  /* Isolate each card's paint so translating the track composites cheaply and a
+     single card's repaint (e.g. metric counter) never invalidates the whole
+     wide track texture. This is the main anti-jank fix for horizontal browsing. */
+  contain: layout paint style;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 @media (min-width: 640px) {
@@ -319,5 +335,36 @@ body.loader-active {
 
   .footer-thank-you-marquee__fade {
     display: none;
+  }
+}
+
+/* =====================================================================
+   MOBILE PERFORMANCE OVERRIDES (phones only; desktop is untouched)
+   The glassmorphism uses backdrop-blur-xl (24px) on cards that are ALSO
+   being scaled/blurred by framer-motion at the same time. Real-time
+   backdrop-filter at that radius is the single biggest cause of dropped
+   frames on mobile GPUs, so we cut the radius down hard on small screens.
+   The look stays "frosted" but composites far cheaper.
+   ===================================================================== */
+@media (max-width: 639px) {
+  .backdrop-blur-xl {
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
+
+  .backdrop-blur-lg,
+  .backdrop-blur-md {
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+  }
+
+  /* Soften/flatten the heavy blur() on the big background glow blobs so the
+     compositor has less to repaint while cards animate. */
+  .blur-3xl {
+    filter: blur(36px);
+  }
+
+  .blur-2xl {
+    filter: blur(24px);
   }
 }

@@ -36,10 +36,18 @@ const bubblePalette = [
   "rgba(245,168,62,0.1)",
 ];
 
+// MOBILE PERF: fewer infinitely-animating bubbles on phones. Each bubble runs a
+// continuous transform+opacity keyframe loop, so trimming the count directly
+// lifts the frame rate on mobile without changing the desktop look.
+const isMobileDevice =
+  typeof window !== "undefined" &&
+  (window.matchMedia("(pointer: coarse)").matches ||
+    window.matchMedia("(max-width: 767px)").matches);
+
 function FloatingBubbles({ opacity, active = true }) {
   const bubbles = useMemo(
     () =>
-      Array.from({ length: 16 }, (_, index) => ({
+      Array.from({ length: isMobileDevice ? 7 : 16 }, (_, index) => ({
         id: index,
         size: 36 + (index % 6) * 22,
         left: `${6 + ((index * 19) % 88)}%`,
@@ -187,6 +195,15 @@ export default function ReelsSection({ isActive = true, onReachStart, onReachEnd
     value > INTRO_PHASE_END + 0.02 ? "hidden" : "visible"
   );
 
+  // PERF: stop the infinite bubble animations once the intro is scrolled away so
+  // they don't compete for frames while the reel track is being scrolled.
+  const [introOnScreen, setIntroOnScreen] = useState(true);
+  useEffect(() => {
+    const update = (value) => setIntroOnScreen(value <= INTRO_PHASE_END + 0.04);
+    update(smoothProgress.get());
+    return smoothProgress.on("change", update);
+  }, [smoothProgress]);
+
   const bubbleOpacity = useTransform(introProgress, [0, 0.15, 0.75, 1], [1, 1, 0.35, 0]);
   const headingScale = useTransform(introProgress, [0, 0.35, 0.72, 1], [1, 1, 1.28, 1.55]);
   const headingOpacity = useTransform(introProgress, [0, 0.3, 0.68, 1], [1, 1, 0.45, 0]);
@@ -236,7 +253,7 @@ export default function ReelsSection({ isActive = true, onReachStart, onReachEnd
         style={{ visibility: introLayerVisibility }}
         className="pointer-events-none absolute inset-0 z-30"
       >
-        <FloatingBubbles opacity={bubbleOpacity} active={isActive} />
+        <FloatingBubbles opacity={bubbleOpacity} active={isActive && introOnScreen} />
 
         <div className="flex h-full items-center justify-center px-5 pt-14 sm:px-8 sm:pt-16">
           <motion.div
