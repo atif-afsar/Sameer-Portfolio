@@ -172,6 +172,13 @@ export default function Footer({
               >
                 Aligarh, India
                 <br />
+                <a
+                  href="mailto:sameershameem86@gmail.com"
+                  className="mt-2 inline-block text-sm text-white/50 transition-colors hover:text-white sm:text-base"
+                >
+                  sameershameem86@gmail.com
+                </a>
+                <br />
                 <span className="text-sm tracking-widest text-white/25">{time} IST</span>
               </div>
 

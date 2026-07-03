@@ -38,5 +38,5 @@ export const navLinks = [
     label: EXPERTISE_NAV_LABELS[section.id] ?? section.titleLine1,
     panelId: section.id,
   })),
-  { label: "Career", panelId: "experience" },
+  { label: "Contact", panelId: "footer" },
 ];
