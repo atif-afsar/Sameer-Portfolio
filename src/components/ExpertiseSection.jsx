@@ -208,7 +208,7 @@ export const ExpertiseCard = memo(function ExpertiseCard({ card, index, stacked 
               </p>
               <p
                 className="expertise-metric-value mt-1 text-center text-[clamp(1rem,4.2vw,1.4rem)] font-semibold leading-none tracking-[-0.04em] text-[#111111] sm:mt-2 sm:text-[clamp(1.25rem,3.2vw,1.85rem)] lg:text-[1.95rem]"
-                style={{ fontFamily: "'Syne', sans-serif" }}
+                style={stacked ? undefined : { fontFamily: "'Syne', sans-serif" }}
               >
                 <MetricCounter value={metric.value} active={isCardActive} />
               </p>

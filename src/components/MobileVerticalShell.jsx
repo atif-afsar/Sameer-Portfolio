@@ -62,25 +62,26 @@ function IntroHeading({ eyebrow, line1, line2, description }) {
   );
 }
 
-function ReelMarquee() {
-  const marqueeRef = useRef(null);
-  const inView = useInView(marqueeRef, { amount: 0.15 });
-  // Duplicate the reel list so the CSS marquee can loop seamlessly (-50%).
-  const marqueeReels = [...reels, ...reels];
-
+function ReelScroller() {
+  // A finger-swipeable horizontal strip (contained to this row — the page still
+  // scrolls vertically). Snap points keep each reel neatly centered.
   return (
-    <div ref={marqueeRef} className="mobile-reel-marquee relative w-full">
-      <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-linear-to-r from-[#f7f5ef] to-transparent" />
-      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-linear-to-l from-[#f7f5ef] to-transparent" />
+    <div className="relative w-full">
+      <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-6 bg-linear-to-r from-[#f7f5ef] to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-6 bg-linear-to-l from-[#f7f5ef] to-transparent" />
 
       <div
-        className="mobile-reel-marquee__track"
-        style={{ animationPlayState: inView ? "running" : "paused" }}
+        className="mobile-reel-scroller no-scrollbar flex w-full snap-x snap-mandatory gap-3 overflow-x-auto overflow-y-hidden px-4 pb-3 pt-1"
+        style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-x pan-y" }}
       >
-        {marqueeReels.map((reel, index) => (
-          <ReelCard key={`${reel.id}-${index}`} reel={reel} />
+        {reels.map((reel) => (
+          <ReelCard key={reel.id} reel={reel} />
         ))}
       </div>
+
+      <p className="mt-3 text-center text-[10px] font-medium uppercase tracking-[0.24em] text-black/40">
+        Swipe to browse reels
+      </p>
     </div>
   );
 }
@@ -234,7 +235,7 @@ export default function MobileVerticalShell() {
       <section className="relative w-full overflow-hidden py-6">
         {sectionBackground}
         <div className="relative">
-          <ReelMarquee />
+          <ReelScroller />
         </div>
       </section>
 

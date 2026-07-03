@@ -190,34 +190,10 @@ html.mobile-vertical-active body {
   font-size: clamp(0.85rem, 4vw, 1.15rem);
 }
 
-.mobile-reel-marquee {
-  overflow: hidden;
-}
-
-.mobile-reel-marquee__track {
-  display: flex;
-  width: max-content;
-  align-items: center;
-  gap: clamp(0.75rem, 3.5vw, 1.5rem);
-  padding-inline: 0.75rem;
-  animation: mobile-reel-marquee 48s linear infinite;
-  will-change: transform;
-}
-
-@keyframes mobile-reel-marquee {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-
-  to {
-    transform: translate3d(-50%, 0, 0);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .mobile-reel-marquee__track {
-    animation: none;
-  }
+.mobile-reel-scroller {
+  scroll-padding-inline: 1rem;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
 }
 
 .performance-metrics-panel {
