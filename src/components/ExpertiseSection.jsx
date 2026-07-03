@@ -87,7 +87,7 @@ function FloatingBubbles({ opacity, active = true }) {
   );
 }
 
-const ExpertiseCard = memo(function ExpertiseCard({ card, index }) {
+export const ExpertiseCard = memo(function ExpertiseCard({ card, index, stacked = false }) {
   const cardRef = useRef(null);
   // Lower threshold so a single scroll that brings the card in reveals it AND
   // starts its number counters right away (was 0.45, which needed extra scroll).
@@ -96,15 +96,50 @@ const ExpertiseCard = memo(function ExpertiseCard({ card, index }) {
   return (
     <motion.article
       ref={cardRef}
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.15 }}
-      transition={{
-        duration: 0.5,
-        ease: [0.22, 1, 0.36, 1],
-      }}
-      className="expertise-track-card group relative flex shrink-0 flex-col overflow-hidden rounded-[1.35rem] border border-black/[0.07] bg-white shadow-[0_24px_60px_rgba(0,0,0,0.09)] transition-[transform,box-shadow] duration-500 hover:-translate-y-1 hover:shadow-[0_32px_72px_rgba(0,0,0,0.12)] sm:rounded-[1.65rem] lg:rounded-[1.75rem]"
+      initial={
+        stacked
+          ? { opacity: 0, y: 60, scale: 0.92, rotateX: 12 }
+          : { opacity: 0, y: 20 }
+      }
+      whileInView={
+        stacked
+          ? { opacity: 1, y: 0, scale: 1, rotateX: 0 }
+          : { opacity: 1, y: 0 }
+      }
+      viewport={{ once: true, amount: stacked ? 0.3 : 0.15 }}
+      transition={
+        stacked
+          ? {
+              duration: 0.85,
+              ease: [0.16, 1, 0.3, 1],
+              delay: (index % 3) * 0.09,
+            }
+          : { duration: 0.5, ease: [0.22, 1, 0.36, 1] }
+      }
+      whileTap={stacked ? { scale: 0.98 } : undefined}
+      style={stacked ? { transformPerspective: 1100 } : undefined}
+      className={`expertise-track-card group relative flex shrink-0 flex-col overflow-hidden rounded-[1.35rem] border border-black/[0.07] bg-white shadow-[0_24px_60px_rgba(0,0,0,0.09)] transition-[transform,box-shadow] duration-500 hover:-translate-y-1 hover:shadow-[0_32px_72px_rgba(0,0,0,0.12)] sm:rounded-[1.65rem] lg:rounded-[1.75rem] ${
+        stacked ? "expertise-card--stacked" : ""
+      }`}
     >
+      {stacked && (
+        <motion.span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-20"
+          initial={{ x: "-130%" }}
+          animate={isCardActive ? { x: "130%" } : { x: "-130%" }}
+          transition={{
+            duration: 1.2,
+            ease: [0.4, 0, 0.2, 1],
+            delay: 0.25 + (index % 3) * 0.09,
+          }}
+          style={{
+            background:
+              "linear-gradient(105deg, transparent 34%, rgba(255,255,255,0.6) 48%, rgba(255,255,255,0.15) 58%, transparent 72%)",
+          }}
+        />
+      )}
+
       <div
         className="pointer-events-none absolute inset-x-0 top-0 h-[3px]"
         style={{

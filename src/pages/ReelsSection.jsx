@@ -7,7 +7,7 @@ import {
   useSnapTrackMotion,
 } from "../hooks/useSectionScroll";
 
-const reels = [
+export const reels = [
   { id: "reel-2", title: "Reel 02", videoSrc: "/videos/video-70_98SJEIEj.mp4" },
   { id: "reel-3", title: "Reel 03", videoSrc: "/videos/video-513_sZR6tsvs.mp4" },
   { id: "reel-4", title: "Reel 04", videoSrc: "/videos/Video-976.mp4" },
@@ -102,7 +102,7 @@ function FloatingBubbles({ opacity, active = true }) {
   );
 }
 
-const ReelCard = memo(function ReelCard({ reel }) {
+export const ReelCard = memo(function ReelCard({ reel }) {
   const cardRef = useRef(null);
   const videoRef = useRef(null);
   const [isVisible, setIsVisible] = useState(false);

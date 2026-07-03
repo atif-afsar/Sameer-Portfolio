@@ -321,7 +321,17 @@ function FlipCard({
 
 const MemoFlipCard = memo(FlipCard);
 
-export default function Home({ isActive = true, onReachEnd }) {
+export default function Home({
+  isActive = true,
+  onReachEnd,
+  variant = "horizontal",
+  scrollProgress,
+}) {
+  // In "vertical" mode Home is a sticky hero inside a tall wrapper and its morph
+  // is driven by native page scroll (via `scrollProgress`) instead of hijacking
+  // wheel/touch. This keeps the exact same hero animation while letting the rest
+  // of the page scroll normally underneath it on mobile.
+  const isVertical = variant === "vertical";
   const [introPhase, setIntroPhase] = useState("scatter");
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const [displayText, setDisplayText] = useState("");
@@ -534,9 +544,25 @@ export default function Home({ isActive = true, onReachEnd }) {
     return () => window.clearTimeout(timer);
   }, [activeRole, displayText, isActive, isDeleting]);
 
+  // VERTICAL MODE: drive the virtual scroll from native page scroll progress so
+  // the hero morph plays as the user scrolls the page (no gesture hijacking).
+  useEffect(() => {
+    if (!isVertical || !scrollProgress) return undefined;
+
+    const apply = (value) => {
+      const clamped = Math.min(Math.max(value, 0), 1);
+      const next = clamped * maxScroll;
+      scrollRef.current = next;
+      virtualScroll.set(next);
+    };
+
+    apply(scrollProgress.get());
+    return scrollProgress.on("change", apply);
+  }, [isVertical, scrollProgress, maxScroll, virtualScroll]);
+
   useEffect(() => {
     const element = containerRef.current;
-    if (!element || !isActive) return undefined;
+    if (!element || !isActive || isVertical) return undefined;
 
     const endTriggeredRef = { current: false };
     const boundaryCooldownRef = { current: false };
@@ -644,7 +670,7 @@ export default function Home({ isActive = true, onReachEnd }) {
       element.removeEventListener("touchend", handleTouchEnd, passiveCapture);
       element.removeEventListener("touchcancel", handleTouchEnd, passiveCapture);
     };
-  }, [virtualScroll, maxScroll, isActive, onReachEnd]);
+  }, [virtualScroll, maxScroll, isActive, onReachEnd, isVertical]);
 
   useEffect(() => {
     const element = containerRef.current;
@@ -681,7 +707,9 @@ export default function Home({ isActive = true, onReachEnd }) {
     <section
       id="home"
       ref={containerRef}
-      className="section-scroll-target relative h-screen overflow-hidden bg-[#f7f5ef] text-[#111111]"
+      className={`relative h-screen overflow-hidden bg-[#f7f5ef] text-[#111111] ${
+        isVertical ? "sticky top-0" : "section-scroll-target"
+      }`}
     >
       {/* SEO: real, crawlable text content. Visually hidden but present in the
           DOM so search engines reliably index the name, role, location and

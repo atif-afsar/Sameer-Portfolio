@@ -2,10 +2,11 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
 const socialLinks = [
-  { name: "Instagram", url: "https://instagram.com/thesameer06" },
-  { name: "YouTube", url: "https://youtube.com" },
-  { name: "Threads", url: "https://threads.net/@thesameer06" },
-  { name: "LinkedIn", url: "https://linkedin.com" },
+  { name: "Instagram", url: "https://www.instagram.com/thesameer06/" },
+  {
+    name: "LinkedIn",
+    url: "https://www.linkedin.com/in/sameer-shameem-4309bb340",
+  },
 ];
 
 const ease = [0.16, 1, 0.3, 1];
@@ -148,6 +149,8 @@ export default function Footer({
                   >
                     <a
                       href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="group flex items-center gap-2 text-base text-white/60 transition-colors hover:text-white sm:text-lg"
                       style={{ fontFamily: "'Syne', sans-serif" }}
                     >

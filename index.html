@@ -57,7 +57,13 @@
       content="Sameer Shameem, content creator in Aligarh, performance marketer in Aligarh, digital marketer Aligarh, influencer marketing Aligarh, Meta Ads, Google Ads, social media marketing, brand campaigns, content creator India"
     />
     <meta name="author" content="Sameer Shameem" />
-    <meta name="robots" content="index, follow" />
+    <meta
+      name="robots"
+      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+    />
+    <meta name="googlebot" content="index, follow" />
+    <meta name="geo.region" content="IN-UP" />
+    <meta name="geo.placename" content="Aligarh, Uttar Pradesh" />
     <link rel="canonical" href="https://sameer-portfolio-dun.vercel.app/" />
 
     <!-- Open Graph / Facebook -->
@@ -128,7 +134,8 @@
         "image": "https://sameer-portfolio-dun.vercel.app/images/sameer1.png",
         "nationality": "Indian",
         "sameAs": [
-          "https://instagram.com/thesameer06",
+          "https://www.instagram.com/thesameer06/",
+          "https://www.linkedin.com/in/sameer-shameem-4309bb340",
           "https://www.threads.net/@thesameer06"
         ],
         "knowsAbout": [
@@ -202,6 +209,67 @@
         ]
       }
     </script>
+
+    <!-- Structured Data: ProfilePage (tells Google this page is the primary
+         profile for the person, which strongly reinforces name-based search) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "ProfilePage",
+        "@id": "https://sameer-portfolio-dun.vercel.app/#profilepage",
+        "url": "https://sameer-portfolio-dun.vercel.app/",
+        "name": "Sameer Shameem — Content Creator & Performance Marketer",
+        "mainEntity": {
+          "@id": "https://sameer-portfolio-dun.vercel.app/#person"
+        },
+        "about": {
+          "@id": "https://sameer-portfolio-dun.vercel.app/#person"
+        }
+      }
+    </script>
+
+    <!-- Structured Data: FAQ (helps Google understand the entity "Sameer
+         Shameem" and can surface answers directly in search) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Who is Sameer Shameem?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sameer Shameem is a content creator and performance marketer based in Aligarh, Uttar Pradesh, India. He helps brands grow through Meta Ads, Google Ads, influencer marketing, and social-first content creation."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What does Sameer Shameem do?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sameer Shameem runs performance marketing campaigns on Meta and Google Ads, creates short-form video content and brand campaigns, manages influencer collaborations, and delivers data-driven digital marketing and growth strategy."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Where is Sameer Shameem based?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sameer Shameem is based in Aligarh, Uttar Pradesh, India, and works with brands across India and worldwide."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How can I contact Sameer Shameem?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "You can reach Sameer Shameem through the contact page on this website, or connect on Instagram (@thesameer06) and LinkedIn."
+            }
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
     <!-- The ONLY loader: a video overlay that lives outside #root so React never
@@ -241,9 +309,10 @@
         </nav>
         <p style="color:#555;">
           Connect with Sameer Shameem on
-          <a href="https://instagram.com/thesameer06" rel="me" style="color:#111;">Instagram (@thesameer06)</a>
+          <a href="https://www.instagram.com/thesameer06/" rel="me noopener" target="_blank" style="color:#111;">Instagram (@thesameer06)</a>,
+          <a href="https://www.linkedin.com/in/sameer-shameem-4309bb340" rel="me noopener" target="_blank" style="color:#111;">LinkedIn</a>,
           and
-          <a href="https://www.threads.net/@thesameer06" rel="me" style="color:#111;">Threads</a>.
+          <a href="https://www.threads.net/@thesameer06" rel="me noopener" target="_blank" style="color:#111;">Threads</a>.
         </p>
       </main>
     </div>

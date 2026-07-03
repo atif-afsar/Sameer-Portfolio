@@ -1,10 +1,19 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar'
+import { useIsMobile } from './hooks/useIsMobile'
 
 const HorizontalPageShell = lazy(() => import('./components/HorizontalPageShell'))
+const MobileVerticalShell = lazy(() => import('./components/MobileVerticalShell'))
 const Contact = lazy(() => import('./pages/Contact'))
 const ParallaxDemo = lazy(() => import('./pages/ParallaxDemo'))
+
+// Desktop keeps the horizontal panel experience; phones get a natively-scrolling
+// vertical layout for far better mobile UX.
+const RootExperience = () => {
+  const isMobile = useIsMobile()
+  return isMobile ? <MobileVerticalShell /> : <HorizontalPageShell />
+}
 
 const App = () => {
   // The video loader lives in index.html (outside #root). We stay hidden until it
@@ -32,7 +41,7 @@ const App = () => {
       <Navbar />
       <Suspense fallback={null}>
         <Routes>
-          <Route path="/" element={<HorizontalPageShell />} />
+          <Route path="/" element={<RootExperience />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/parallax-demo" element={<ParallaxDemo />} />
         </Routes>

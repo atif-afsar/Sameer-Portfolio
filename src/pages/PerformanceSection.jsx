@@ -67,7 +67,7 @@ function FloatingBubbles({ opacity, active = true }) {
 const METRICS_COUNTER_START = 0.48;
 const METRICS_COUNTER_RESET = 0.38;
 
-function PerformanceMetricsPanel({ countersActive }) {
+export function PerformanceMetricsPanel({ countersActive }) {
   const heroStat = performanceStats.find((s) => s.highlight) ?? performanceStats[0];
   const gridStats = performanceStats.filter((s) => !s.highlight);
 
