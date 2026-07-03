@@ -133,11 +133,11 @@ const ExpertiseCard = memo(function ExpertiseCard({ card, index }) {
         </div>
 
         <div className="relative flex items-center gap-3 sm:gap-4">
-          <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#f4f2eb] ring-1 ring-black/[0.06] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] sm:h-16 sm:w-16 sm:rounded-2xl lg:h-[72px] lg:w-[72px]">
+          <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white ring-1 ring-black/[0.06] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] sm:h-16 sm:w-16 sm:rounded-2xl lg:h-[72px] lg:w-[72px]">
             <img
               src={card.image}
               alt=""
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              className="h-full w-full object-contain p-1 transition-transform duration-500 group-hover:scale-105 sm:p-1.5"
               draggable="false"
               decoding="async"
               loading="lazy"

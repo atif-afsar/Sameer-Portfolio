@@ -357,10 +357,36 @@ export default function Home({ isActive = true, onReachEnd }) {
   const contentOpacity = useTransform(smoothMorph, [0.42, 0.72], [0, 1]);
   const contentY = useTransform(smoothMorph, [0.42, 0.72], [18, 0]);
   const introOpacity = useTransform(smoothMorph, [0, 0.62], [1, 0]);
-  // Fills the middle blank zone once Hello/roles fade and before the arc fully opens.
-  const glanceOpacity = useTransform(smoothMorph, [0.5, 0.66, 0.9, 1], [0, 1, 1, 0.8]);
-  const glanceY = useTransform(smoothMorph, [0.5, 0.66], [14, 0]);
-  const glanceScale = useTransform(smoothMorph, [0.5, 0.66], [0.96, 1]);
+  // Desktop: fade in later and sit lower so "Lets Have a Glance" never collides
+  // with the top headline block. Mobile keeps the earlier, centered timing.
+  const glanceOpacity = useTransform(smoothMorph, (value) => {
+    if (isMobileViewport) {
+      if (value <= 0.5) return 0;
+      if (value >= 0.9) return 0.8;
+      if (value <= 0.66) return (value - 0.5) / 0.16;
+      return 1;
+    }
+    if (value <= 0.58) return 0;
+    if (value >= 0.92) return 0.8;
+    if (value <= 0.76) return (value - 0.58) / 0.18;
+    return 1;
+  });
+  const glanceY = useTransform(smoothMorph, (value) => {
+    const start = isMobileViewport ? 0.5 : 0.58;
+    const end = isMobileViewport ? 0.66 : 0.76;
+    if (value <= start) return isMobileViewport ? 14 : 20;
+    if (value >= end) return 0;
+    const t = (value - start) / (end - start);
+    return (isMobileViewport ? 14 : 20) * (1 - t);
+  });
+  const glanceScale = useTransform(smoothMorph, (value) => {
+    const start = isMobileViewport ? 0.5 : 0.58;
+    const end = isMobileViewport ? 0.66 : 0.76;
+    if (value <= start) return 0.96;
+    if (value >= end) return 1;
+    const t = (value - start) / (end - start);
+    return 0.96 + t * 0.04;
+  });
 
   // PERF: entrance choreography (scatter -> line -> circle) is driven by two
   // spring motion values instead of per-card `animate` props, so the cards
@@ -681,7 +707,7 @@ export default function Home({ isActive = true, onReachEnd }) {
 
       <motion.div
         style={{ opacity: contentOpacity, y: contentY }}
-        className="pointer-events-none absolute left-1/2 top-[13%] z-20 flex w-full max-w-[760px] -translate-x-1/2 flex-col items-center px-5 text-center sm:top-[12%]"
+        className="pointer-events-none absolute left-1/2 top-[13%] z-20 flex w-full max-w-[760px] -translate-x-1/2 flex-col items-center px-5 text-center sm:top-[12%] lg:max-w-[680px]"
       >
         <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-black/45">
           Creator Portfolio
@@ -766,7 +792,7 @@ export default function Home({ isActive = true, onReachEnd }) {
           </motion.div>
 
           <motion.div
-            className="pointer-events-none absolute left-1/2 top-1/2 z-20 flex w-full max-w-[min(92vw,520px)] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center px-4 text-center sm:px-6"
+            className="pointer-events-none absolute left-1/2 top-1/2 z-20 flex w-full max-w-[min(92vw,520px)] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center px-4 text-center sm:px-6 lg:top-[63%] lg:max-w-[480px] lg:-translate-y-0 xl:top-[64%]"
             style={{
               opacity: glanceOpacity,
               y: glanceY,
@@ -774,12 +800,12 @@ export default function Home({ isActive = true, onReachEnd }) {
             }}
           >
             <p
-              className="text-[clamp(1.65rem,7.2vw,3.25rem)] font-semibold leading-[1.05] tracking-[-0.03em] text-[#111111] sm:text-[clamp(2rem,5.5vw,3.5rem)]"
+              className="text-[clamp(1.65rem,7.2vw,3.25rem)] font-semibold leading-[1.05] tracking-[-0.03em] text-[#111111] lg:text-[clamp(1.85rem,3.2vw,2.75rem)]"
               style={{ fontFamily: "'Syne', sans-serif" }}
             >
               <span className="block">Lets Have a</span>
               <span
-                className="mt-1 block text-[clamp(1.85rem,8vw,3.75rem)] font-normal italic leading-[0.95] text-[#1a1a1a] sm:mt-1.5"
+                className="mt-1 block text-[clamp(1.85rem,8vw,3.75rem)] font-normal italic leading-[0.95] text-[#1a1a1a] sm:mt-1.5 lg:mt-1 lg:text-[clamp(2rem,3.5vw,3rem)]"
                 style={{ fontFamily: "'Cormorant Garamond', serif" }}
               >
                 Glance

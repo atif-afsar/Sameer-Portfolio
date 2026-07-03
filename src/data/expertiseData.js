@@ -37,7 +37,7 @@ export const expertiseSections = [
         tag: "Optimization",
         title: "Performance Marketing",
         description: "Funnel testing, budget allocation, and conversion-focused growth loops.",
-        image: "/images/performance.jpeg",
+        image: "/images/digital-marketing.png",
         accent: "rgba(16,16,16,0.08)",
         metrics: [
           { label: "Avg. ROAS", value: "5.2x" },
@@ -61,7 +61,7 @@ export const expertiseSections = [
         tag: "Insights",
         title: "Analytics & Reporting",
         description: "Clear dashboards and weekly insights that turn data into next-step decisions.",
-        image: "/images/sales.jpeg",
+        image: "/images/analytics-reporting.png",
         accent: "rgba(80,126,255,0.14)",
         metrics: [
           { label: "Data Sources", value: "8+" },
@@ -73,7 +73,7 @@ export const expertiseSections = [
         tag: "Storytelling",
         title: "Content Strategy",
         description: "Editorial calendars, hooks, and creative direction aligned with business goals.",
-        image: "/images/content.png",
+        image: "/images/content-strategy.png",
         accent: "rgba(245,168,62,0.16)",
         metrics: [
           { label: "Posts Shipped", value: "500+" },
@@ -132,7 +132,7 @@ export const expertiseSections = [
         tag: "Experimentation",
         title: "A/B Testing",
         description: "Hypothesis-led tests on landing pages, offers, and creative to find winners fast.",
-        image: "/images/content.png",
+        image: "/images/ab-testing.png",
         accent: "rgba(225,48,108,0.1)",
         metrics: [
           { label: "Tests Run", value: "120+" },
@@ -156,7 +156,7 @@ export const expertiseSections = [
         tag: "Data",
         title: "Growth Analytics",
         description: "North-star metrics, cohort views, and weekly growth reviews for sharp decisions.",
-        image: "/images/premier.png",
+        image: "/images/growth-analytics.png",
         accent: "rgba(245,168,62,0.14)",
         metrics: [
           { label: "KPIs Tracked", value: "24+" },
@@ -179,7 +179,7 @@ export const expertiseSections = [
         tag: "Brand",
         title: "Brand Voice",
         description: "Tone guides and messaging frameworks that make every touchpoint sound like you.",
-        image: "/images/content.png",
+        image: "/images/brand-voice.png",
         accent: "rgba(245,168,62,0.16)",
         metrics: [
           { label: "Voice Guides", value: "15+" },
@@ -227,7 +227,7 @@ export const expertiseSections = [
         tag: "Conversion",
         title: "Landing Pages",
         description: "Hero copy, benefit stacks, and social proof blocks built to drive sign-ups and sales.",
-        image: "/images/sales.jpeg",
+        image: "/images/landing-page.png",
         accent: "rgba(80,126,255,0.14)",
         metrics: [
           { label: "Pages Written", value: "45+" },
