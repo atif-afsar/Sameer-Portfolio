@@ -38,6 +38,95 @@ function ThankYouMarquee() {
   );
 }
 
+const CONTACT_EMAIL = "sameershameem86@gmail.com";
+
+function ConnectForm() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+
+    const subject = encodeURIComponent(
+      `Portfolio enquiry from ${name.trim() || "someone"}`
+    );
+    const body = encodeURIComponent(
+      `Name: ${name.trim()}\nEmail: ${email.trim()}\n\nMessage:\n${message.trim()}`
+    );
+
+    window.location.href = `mailto:${CONTACT_EMAIL}?subject=${subject}&body=${body}`;
+  };
+
+  const fieldClass =
+    "w-full rounded-xl border border-white/12 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-white/35 outline-none transition-colors focus:border-white/40 focus:bg-white/[0.07]";
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="mt-8 w-full max-w-[440px] sm:mt-10"
+      data-scroll-lock
+    >
+      <p className="mb-4 text-[9px] font-bold uppercase tracking-[0.24em] text-white/30 sm:text-[10px] sm:tracking-[0.3em]">
+        Let&apos;s connect
+      </p>
+
+      <div className="flex flex-col gap-3">
+        <input
+          type="text"
+          required
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Your name"
+          aria-label="Your name"
+          className={fieldClass}
+        />
+        <input
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Your email"
+          aria-label="Your email"
+          className={fieldClass}
+        />
+        <textarea
+          required
+          rows={3}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="Tell me about your project..."
+          aria-label="Your message"
+          className={`${fieldClass} resize-none`}
+        />
+
+        <button
+          type="submit"
+          className="group mt-1 inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-black transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0"
+          style={{ fontFamily: "'Syne', sans-serif" }}
+        >
+          Send message
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="transition-transform duration-200 group-hover:translate-x-0.5"
+            aria-hidden="true"
+          >
+            <path d="M5 12h14" />
+            <path d="m13 6 6 6-6 6" />
+          </svg>
+        </button>
+      </div>
+    </form>
+  );
+}
+
 function Reveal({
   children,
   className = "",
@@ -126,6 +215,10 @@ export default function Footer({
                   <span className="text-white/25 italic">iconic.</span>
                 </span>
               </h2>
+            </Reveal>
+
+            <Reveal scrollRoot={scrollRoot} delay={0.12}>
+              <ConnectForm />
             </Reveal>
           </div>
 

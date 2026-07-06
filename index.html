@@ -20,7 +20,9 @@
       }
       #root {
         min-height: 100vh;
-        background: #000;
+        /* Match Home's background so that, the instant the loader fades, there is
+           never a black gap/blank before Home paints — it crossfades into cream. */
+        background: #f7f5ef;
       }
       #initial-loader {
         position: fixed;
@@ -42,6 +44,14 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
+        /* Hide the video until it is actually playing so users never see a
+           frozen first frame (a static "image") while it buffers — the loader
+           stays plain black, then the moving video fades straight in. */
+        opacity: 0;
+        transition: opacity 0.25s ease;
+      }
+      #initial-loader video.is-playing {
+        opacity: 1;
       }
     </style>
     <link rel="preload" href="/videos/IMG_4136.mp4" as="video" type="video/mp4" />
@@ -344,12 +354,39 @@
         video.addEventListener("ended", finish);
         video.addEventListener("error", finish);
 
-        var playAttempt = video.play();
-        if (playAttempt && typeof playAttempt.catch === "function") {
-          // Autoplay blocked: don't hang on a video that will never play.
-          playAttempt.catch(function () {
-            window.setTimeout(finish, 2200);
-          });
+        // Reveal the video only once it is genuinely playing (avoids the frozen
+        // first-frame "image" flash on the very first, uncached load).
+        video.addEventListener(
+          "playing",
+          function () {
+            video.classList.add("is-playing");
+          },
+          { once: true }
+        );
+
+        // Setting the property (not just the attribute) is required for reliable
+        // muted autoplay across browsers — otherwise the video can freeze on its
+        // first frame and look like a static picture instead of playing.
+        video.muted = true;
+        video.defaultMuted = true;
+
+        function tryPlay() {
+          var attempt = video.play();
+          if (attempt && typeof attempt.catch === "function") {
+            attempt.catch(function () {
+              // Autoplay blocked: don't hang on a video that will never play.
+              window.setTimeout(finish, 1500);
+            });
+          }
+        }
+
+        // Play as soon as there is decoded video data, and also try immediately.
+        if (video.readyState >= 2) {
+          tryPlay();
+        } else {
+          video.addEventListener("loadeddata", tryPlay, { once: true });
+          video.addEventListener("canplay", tryPlay, { once: true });
+          tryPlay();
         }
 
         // Hard safety cap so the site is never stuck behind the loader.
