@@ -354,15 +354,19 @@
         video.addEventListener("ended", finish);
         video.addEventListener("error", finish);
 
-        // Reveal the video only once it is genuinely playing (avoids the frozen
-        // first-frame "image" flash on the very first, uncached load).
-        video.addEventListener(
-          "playing",
-          function () {
-            video.classList.add("is-playing");
-          },
-          { once: true }
-        );
+        // Reveal the video ONLY once it is genuinely moving, so the still first
+        // frame (the "image") is never shown. Listeners are attached before play
+        // and we also cover the cached-reload case where playback may already
+        // have started before this script ran.
+        function reveal() {
+          if (video.classList.contains("is-playing")) return;
+          video.classList.add("is-playing");
+        }
+
+        video.addEventListener("playing", reveal);
+        video.addEventListener("timeupdate", function () {
+          if (video.currentTime > 0.04) reveal();
+        });
 
         // Setting the property (not just the attribute) is required for reliable
         // muted autoplay across browsers — otherwise the video can freeze on its
@@ -380,14 +384,14 @@
           }
         }
 
-        // Play as soon as there is decoded video data, and also try immediately.
-        if (video.readyState >= 2) {
-          tryPlay();
-        } else {
-          video.addEventListener("loadeddata", tryPlay, { once: true });
-          video.addEventListener("canplay", tryPlay, { once: true });
-          tryPlay();
-        }
+        // Play as soon as there is decoded data, and also try immediately.
+        video.addEventListener("loadeddata", tryPlay, { once: true });
+        video.addEventListener("canplay", tryPlay, { once: true });
+        tryPlay();
+
+        // Cached reload: playback may already be underway before we attached the
+        // listeners above — reveal immediately in that case.
+        if (!video.paused && video.currentTime > 0) reveal();
 
         // Hard safety cap so the site is never stuck behind the loader.
         window.setTimeout(finish, 9000);

@@ -30,7 +30,7 @@ const homeBackground = (
 
 const bubblePalette = [
   "rgba(80,126,255,0.14)",
-  "rgba(245,168,62,0.12)",
+  "rgba(245,168,62,0.12)",  
   "rgba(255,255,255,0.35)",
   "rgba(80,126,255,0.08)",
   "rgba(245,168,62,0.1)",
