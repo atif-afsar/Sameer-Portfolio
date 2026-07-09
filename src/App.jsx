@@ -26,6 +26,12 @@ const RootExperience = () => {
   return isMobile ? <MobileVerticalShell /> : <HorizontalPageShell />
 }
 
+function revealRootShell() {
+  const root = document.getElementById('root')
+  if (root) root.classList.add('app-ready')
+  document.body.classList.remove('loader-active')
+}
+
 const App = () => {
   // The video loader lives in index.html (outside #root). We stay hidden until it
   // signals it is finished, then reveal Home instantly — no gap, no second video.
@@ -34,14 +40,18 @@ const App = () => {
   )
 
   useEffect(() => {
-    if (window.__appLoaderDone) {
+    const markReady = () => {
       setLoading(false)
+      revealRootShell()
+    }
+
+    if (window.__appLoaderDone) {
+      markReady()
       return undefined
     }
 
-    const handleDone = () => setLoading(false)
-    window.addEventListener('app-loader-done', handleDone)
-    return () => window.removeEventListener('app-loader-done', handleDone)
+    window.addEventListener('app-loader-done', markReady)
+    return () => window.removeEventListener('app-loader-done', markReady)
   }, [])
 
   return (

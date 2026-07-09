@@ -6,7 +6,10 @@
     <link rel="shortcut icon" href="/image.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- Instant black screen + video preload so the loader shows before React -->
+    <!-- Instant black screen + video preload so the loader shows before React.
+         Critical: on iOS Safari the <video> first frame often paints as a still
+         "image" before playback starts — even with opacity:0. We keep a solid
+         black mask on top until the video is genuinely playing. -->
     <style>
       html,
       body {
@@ -18,10 +21,15 @@
            horizontal "shake"/jump during loading. */
         overflow: hidden;
       }
+      /* Hide the app shell until the intro loader finishes so Home never
+         flashes underneath on slow/mobile paints. */
       #root {
         min-height: 100vh;
-        /* Match Home's background so that, the instant the loader fades, there is
-           never a black gap/blank before Home paints — it crossfades into cream. */
+        background: #000;
+        visibility: hidden;
+      }
+      #root.app-ready {
+        visibility: visible;
         background: #f7f5ef;
       }
       #initial-loader {
@@ -41,17 +49,35 @@
         pointer-events: none;
       }
       #initial-loader video {
+        position: absolute;
+        inset: 0;
         width: 100%;
         height: 100%;
         object-fit: cover;
-        /* Hide the video until it is actually playing so users never see a
-           frozen first frame (a static "image") while it buffers — the loader
-           stays plain black, then the moving video fades straight in. */
+        /* iOS can ignore opacity alone on video layers — also hide via
+           visibility and keep the element under the black mask. */
         opacity: 0;
-        transition: opacity 0.25s ease;
+        visibility: hidden;
+        background: #000;
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
       }
       #initial-loader video.is-playing {
         opacity: 1;
+        visibility: visible;
+      }
+      /* Solid black cover sits ABOVE the video until playback is real.
+         This is what stops the iOS "full image before loader" flash. */
+      #initial-loader-mask {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        background: #000;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+      }
+      #initial-loader-mask.is-lifted {
+        opacity: 0;
       }
     </style>
     <link rel="preload" href="/videos/IMG_4136.mp4" as="video" type="video/mp4" />
@@ -281,12 +307,20 @@
       }
     </script>
   </head>
-  <body>
+  <body class="loader-active">
     <!-- The ONLY loader: a video overlay that lives outside #root so React never
-         swaps/re-creates it (that duplicate is what caused the gap/restart). It
-         plays instantly, then fades to reveal the already-mounted app. -->
+         swaps/re-creates it. Black mask covers the video until it is playing so
+         iOS never flashes the still first frame as a full-screen image. -->
     <div id="initial-loader" aria-hidden="true">
-      <video src="/videos/IMG_4136.mp4" autoplay muted playsinline preload="auto"></video>
+      <video
+        muted
+        playsinline
+        webkit-playsinline
+        preload="auto"
+        disablepictureinpicture
+        disableremoteplayback
+      ></video>
+      <div id="initial-loader-mask" aria-hidden="true"></div>
     </div>
     <div id="root">
       <!-- SEO BASELINE: real, crawlable content for search engines and
@@ -328,9 +362,18 @@
     </div>
     <script>
       (function () {
+        var LOADER_SRC = "/videos/IMG_4136.mp4";
         var loader = document.getElementById("initial-loader");
+        var mask = document.getElementById("initial-loader-mask");
+        var root = document.getElementById("root");
         var video = loader && loader.querySelector("video");
         var done = false;
+        var revealed = false;
+
+        function revealApp() {
+          if (root) root.classList.add("app-ready");
+          document.body.classList.remove("loader-active");
+        }
 
         function finish() {
           if (done) return;
@@ -338,6 +381,7 @@
           // Tell React to reveal Home immediately (no gap after the video).
           window.__appLoaderDone = true;
           window.dispatchEvent(new Event("app-loader-done"));
+          revealApp();
           if (loader) {
             loader.classList.add("loader-hide");
             setTimeout(function () {
@@ -354,44 +398,72 @@
         video.addEventListener("ended", finish);
         video.addEventListener("error", finish);
 
-        // Reveal the video ONLY once it is genuinely moving, so the still first
-        // frame (the "image") is never shown. Listeners are attached before play
-        // and we also cover the cached-reload case where playback may already
-        // have started before this script ran.
+        // Lift the black mask + show video ONLY once frames are actually moving.
+        // Never reveal on loadeddata alone — that is the still first frame iOS
+        // paints as a full-screen image before the loader "starts".
         function reveal() {
-          if (video.classList.contains("is-playing")) return;
+          if (revealed) return;
+          if (video.paused || video.currentTime < 0.05) return;
+          revealed = true;
           video.classList.add("is-playing");
+          if (mask) {
+            mask.classList.add("is-lifted");
+            setTimeout(function () {
+              if (mask && mask.parentNode) mask.parentNode.removeChild(mask);
+            }, 220);
+          }
         }
 
-        video.addEventListener("playing", reveal);
+        video.addEventListener("playing", function () {
+          // Defer one frame so the first decoded still isn't painted uncovered.
+          requestAnimationFrame(function () {
+            requestAnimationFrame(reveal);
+          });
+        });
         video.addEventListener("timeupdate", function () {
-          if (video.currentTime > 0.04) reveal();
+          if (video.currentTime > 0.05) reveal();
         });
 
-        // Setting the property (not just the attribute) is required for reliable
-        // muted autoplay across browsers — otherwise the video can freeze on its
-        // first frame and look like a static picture instead of playing.
+        // Property setters are required for reliable muted autoplay (esp. iOS).
         video.muted = true;
         video.defaultMuted = true;
+        video.setAttribute("muted", "");
+        video.setAttribute("playsinline", "");
+        video.setAttribute("webkit-playsinline", "");
+        video.playsInline = true;
 
         function tryPlay() {
           var attempt = video.play();
           if (attempt && typeof attempt.catch === "function") {
             attempt.catch(function () {
-              // Autoplay blocked: don't hang on a video that will never play.
-              window.setTimeout(finish, 1500);
+              // Autoplay blocked: stay on black, then go to Home — never show
+              // a frozen first-frame image.
+              window.setTimeout(finish, 800);
             });
           }
         }
 
-        // Play as soon as there is decoded data, and also try immediately.
-        video.addEventListener("loadeddata", tryPlay, { once: true });
-        video.addEventListener("canplay", tryPlay, { once: true });
-        tryPlay();
+        // Assign src AFTER the black loader + mask are in the DOM so the first
+        // paint is always solid black (0s of image/content flash).
+        function startLoader() {
+          video.src = LOADER_SRC;
+          video.load();
+          video.addEventListener("loadeddata", tryPlay, { once: true });
+          video.addEventListener("canplay", tryPlay, { once: true });
+          tryPlay();
+        }
 
-        // Cached reload: playback may already be underway before we attached the
-        // listeners above — reveal immediately in that case.
-        if (!video.paused && video.currentTime > 0) reveal();
+        // Wait for the next paint so the black screen is committed first.
+        if (typeof requestAnimationFrame === "function") {
+          requestAnimationFrame(function () {
+            requestAnimationFrame(startLoader);
+          });
+        } else {
+          window.setTimeout(startLoader, 0);
+        }
+
+        // Cached reload: playback may already be underway.
+        if (!video.paused && video.currentTime > 0.05) reveal();
 
         // Hard safety cap so the site is never stuck behind the loader.
         window.setTimeout(finish, 9000);
